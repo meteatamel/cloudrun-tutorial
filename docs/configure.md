@@ -4,7 +4,7 @@ Let's see how to configure a service. We can use the service from the [previous]
 
 ## Environment variables
 
-The service in [public](../public) folder looks for an environment variable `TARGET` to print out but it's not set. Let's set that variable in Cloud Run:
+The service in [helloworld](../helloworld) folder looks for an environment variable `TARGET` to print out but it's not set. Let's set that variable in Cloud Run:
 
 ```bash
 gcloud beta run services update helloworld-public \

@@ -6,7 +6,7 @@ Let's deploy a container to a public Cloud Run service.
 
 Cloud Run already has a [build-and-deploy](https://cloud.google.com/run/docs/quickstarts/build-and-deploy) page that shows how to deploy a `Hello World` service in various languages. 
 
-You can either create your 'Hello World' service as described in Cloud Run docs or take a look at the service we already created in [public](../public) folder.
+You can either create your 'Hello World' service as described in Cloud Run docs or take a look at the service we already created in [helloworld](../helloworld) folder.
 
 ## Build the container
 
