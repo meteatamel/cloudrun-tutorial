@@ -2,7 +2,6 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.0</TargetFramework>
-    <RootNamespace>helloworld_csharp</RootNamespace>
   </PropertyGroup>
 
 </Project>

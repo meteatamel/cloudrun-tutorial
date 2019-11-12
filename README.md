@@ -25,7 +25,12 @@ gcloud services enable --project "${PROJECT_ID}" \
 
 ## Samples
 
-* [HelloWorld Cloud Run](docs/helloworldcloudrun.md)
+* [Public service](docs/public.md)
+* [Configure](docs/configure.md)
+* [Private service](docs/private.md)
+* [Pub/Sub triggered service](docs/pubsub.md)
+* [Scheduled service](docs/scheduled.md)
+* [Task triggered service](docs/task.md)
 
 -------
 
