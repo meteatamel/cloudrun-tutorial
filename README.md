@@ -17,8 +17,8 @@ There's a [presentation](https://speakerdeck.com/meteatamel/serverless-container
 
 To enable Cloud Build and Cloud Run:
 
-```sh
-gcloud services enable --project "${PROJECT_ID}" \
+```bash
+gcloud services enable --project ${PROJECT_ID} \
     cloudbuild.googleapis.com \
     run.googleapis.com
 ```
