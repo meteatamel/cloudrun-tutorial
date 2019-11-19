@@ -21,7 +21,7 @@ gcloud builds submit \
 ## Deploy to Cloud Run
 
 ```bash
-gcloud beta run deploy \
+gcloud run deploy \
   --image gcr.io/${PROJECT_ID}/helloworld \
   --platform managed \
   --allow-unauthenticated

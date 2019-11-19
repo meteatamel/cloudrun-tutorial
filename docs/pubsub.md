@@ -23,7 +23,7 @@ gcloud builds submit \
 Note that we're deploying with `no-allow-unauthenticated` flag. We only want Pub/Sub to trigger the service:
 
 ```bash
-gcloud beta run deploy event-display-pubsub \
+gcloud run deploy event-display-pubsub \
   --image gcr.io/${PROJECT_ID}/event-display \
   --platform managed \
   --no-allow-unauthenticated
@@ -47,7 +47,7 @@ gcloud iam service-accounts create cloudrun-pubsub-serviceaccount \
 Give service account permission to invoke the Cloud Run service:
 
 ```bash
-gcloud beta run services add-iam-policy-binding event-display-pubsub \
+gcloud run services add-iam-policy-binding event-display-pubsub \
    --member=serviceAccount:cloudrun-pubsub-serviceaccount@${PROJECT_ID}.iam.gserviceaccount.com \
    --role=roles/run.invoker
 ```
