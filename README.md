@@ -15,7 +15,14 @@ There's a [presentation](https://speakerdeck.com/meteatamel/serverless-container
 
 [Cloud Run](https://cloud.google.com/run/) is a fully managed service, so there's no setup other than enabling Cloud Run and Cloud Build. [Cloud Run for Anthos](https://cloud.google.com/run/docs/quickstarts/prebuilt-deploy-gke) requires Anthos. This tutorial focuses on managed Cloud Run. 
 
-To enable Cloud Build and Cloud Run:
+First, setup your project id and number that we'll need throughout samples:
+
+```bash
+export PROJECT_ID="$(gcloud config get-value core/project)"
+export PROJECT_NUMBER="$(gcloud projects list --filter=${PROJECT_ID} --format='value(PROJECT_NUMBER)')"
+```
+
+Enable Cloud Build and Cloud Run:
 
 ```bash
 gcloud services enable --project ${PROJECT_ID} \

@@ -23,7 +23,9 @@ gcloud builds submit \
 Note that we're deploying with `no-allow-unauthenticated` flag. We only want Pub/Sub to trigger the service:
 
 ```bash
-gcloud run deploy event-display-pubsub \
+export SERVICE_NAME=event-display-pubsub
+
+gcloud run deploy ${SERVICE_NAME} \
   --image gcr.io/${PROJECT_ID}/event-display \
   --platform managed \
   --no-allow-unauthenticated
@@ -34,22 +36,27 @@ gcloud run deploy event-display-pubsub \
 Create a Pub/Sub topic:
 
 ```bash
-gcloud pubsub topics create cloudrun-topic
+export TOPIC_NAME=cloudrun-pubsub
+
+gcloud pubsub topics create ${TOPIC_NAME}
 ```
 
 Create a service account:
 
 ```bash
-gcloud iam service-accounts create cloudrun-pubsub-serviceaccount \
+export SERVICE_ACCOUNT=${TOPIC_NAME}-sa
+
+gcloud iam service-accounts create ${SERVICE_ACCOUNT} \
    --display-name "Cloud Run Pub/Sub Service Account"
 ```
 
 Give service account permission to invoke the Cloud Run service:
 
 ```bash
-gcloud run services add-iam-policy-binding event-display-pubsub \
-   --member=serviceAccount:cloudrun-pubsub-serviceaccount@${PROJECT_ID}.iam.gserviceaccount.com \
-   --role=roles/run.invoker
+gcloud run services add-iam-policy-binding ${SERVICE_NAME} \
+   --member=serviceAccount:${SERVICE_ACCOUNT}@${PROJECT_ID}.iam.gserviceaccount.com \
+   --role=roles/run.invoker \
+   --platform managed
 ```
 
 Enable your project to create Cloud Pub/Sub authentication tokens:
@@ -63,9 +70,11 @@ gcloud projects add-iam-policy-binding ${PROJECT_ID} \
 Create a Cloud Pub/Sub subscription with the service account:
 
 ```bash
-gcloud beta pubsub subscriptions create cloudrun-topic-subscription --topic cloudrun-topic \
+export SERVICE_URL="$(gcloud run services list --platform managed --filter=${SERVICE_NAME} --format='value(URL)')"
+
+gcloud beta pubsub subscriptions create ${TOPIC_NAME}-subscription --topic ${TOPIC_NAME} \
    --push-endpoint=${SERVICE_URL} \
-   --push-auth-service-account=cloudrun-pubsub-serviceaccount@${PROJECT_ID}.iam.gserviceaccount.com
+   --push-auth-service-account=${SERVICE_ACCOUNT}@${PROJECT_ID}.iam.gserviceaccount.com
 ```
 
 ## Test the service
@@ -73,7 +82,7 @@ gcloud beta pubsub subscriptions create cloudrun-topic-subscription --topic clou
 You can test the service by sending a message to the queue: 
 
 ```bash
-gcloud pubsub topics publish cloudrun-topic --message "Hello World"
+gcloud pubsub topics publish ${TOPIC_NAME} --message "Hello World"
 ```
 
 If you check the logs of the service in Cloud Run console, you should see the event:

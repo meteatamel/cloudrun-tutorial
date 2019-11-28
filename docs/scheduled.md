@@ -31,7 +31,9 @@ gcloud builds submit \
 Note that we're deploying with `no-allow-unauthenticated` flag. We only want Cloud Scheduler to trigger the service:
 
 ```bash
-gcloud run deploy event-display-scheduled \
+export SERVICE_NAME=event-display-scheduled
+
+gcloud run deploy ${SERVICE_NAME} \
   --image gcr.io/${PROJECT_ID}/event-display \
   --platform managed \
   --no-allow-unauthenticated
@@ -42,7 +44,9 @@ gcloud run deploy event-display-scheduled \
 Create a service account:
 
 ```bash
-gcloud iam service-accounts create cloudrun-scheduler-sa \
+export SERVICE_ACCOUNT=cloudrun-scheduler-sa
+
+gcloud iam service-accounts create ${SERVICE_ACCOUNT} \
    --display-name "Cloud Run Scheduler Service Account"
 ```
 
@@ -50,7 +54,7 @@ Give service account permission to invoke the Cloud Run service:
 
 ```bash
 gcloud run services add-iam-policy-binding event-display-scheduled \
-   --member=serviceAccount:cloudrun-scheduler-sa@${PROJECT_ID}.iam.gserviceaccount.com \
+   --member=serviceAccount:${SERVICE_ACCOUNT}@${PROJECT_ID}.iam.gserviceaccount.com \
    --role=roles/run.invoker
 ```
 
@@ -59,11 +63,13 @@ gcloud run services add-iam-policy-binding event-display-scheduled \
 Create a Cloud Scheduler job to execute every 5 minutes:
 
 ```bash
+export SERVICE_URL="$(gcloud run services list --platform managed --filter=${SERVICE_NAME} --format='value(URL)')"
+
 gcloud beta scheduler jobs create http cloudrun-job --schedule "*/5 * * * *" \
    --http-method=POST \
-   --uri=https://event-display-scheduled-paelpl5x6a-ew.a.run.app \
-   --oidc-service-account-email=cloudrun-scheduler-sa@${PROJECT_ID}.iam.gserviceaccount.com \
-   --oidc-token-audience=https://event-display-scheduled-paelpl5x6a-ew.a.run.app
+   --uri=${SERVICE_URL} \
+   --oidc-service-account-email=${SERVICE_ACCOUNT}@${PROJECT_ID}.iam.gserviceaccount.com \
+   --oidc-token-audience=${SERVICE_URL}
 ```
 
 ## Test the service
@@ -71,9 +77,9 @@ gcloud beta scheduler jobs create http cloudrun-job --schedule "*/5 * * * *" \
 You can check the logs of the service to see that it's been triggered by the Cloud Scheduler every 5 mins:
 
 ```
-12:15:00.578 GMT POST 200 188 B 100 ms Google-Cloud-Scheduler https://event-display-scheduled-paelpl5x6a-ew.a.run.app/
+12:15:00.578 GMT POST 200 188 B 100 ms Google-Cloud-Scheduler https://event-display-scheduled-pbelpl5x6a-ew.a.run.app/
 
-12:20:00.641 GMT POST 200 188 B 32 ms Google-Cloud-Scheduler https://event-display-scheduled-paelpl5x6a-ew.a.run.app/
+12:20:00.641 GMT POST 200 188 B 32 ms Google-Cloud-Scheduler https://event-display-scheduled-pbelpl5x6a-ew.a.run.app/
 ```
 
 ## What's Next?

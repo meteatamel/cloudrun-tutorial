@@ -6,15 +6,6 @@ In [Pub/Sub triggered service](pubsub.md) example, you can see how a Pub/Sub mes
 
 ![Cloud Run with Cloud Storage](./images/cloud-run-storage.png)
 
-## Setup project variables
-
-First, setup your project id and number that we'll need later:
-
-```bash
-export PROJECT_ID="$(gcloud config get-value core/project)"
-export PROJECT_NUMBER="$(gcloud projects list --filter=${PROJECT_ID} --format='value(PROJECT_NUMBER)')"
-```
-
 ## Create a 'Event Display' service
 
 Take a look at the service we already created in [event-display](../event-display) folder. It simply logs out the HTTP request body. We'll use it to display the received messages.
@@ -55,7 +46,9 @@ gcloud pubsub topics create ${TOPIC_NAME}
 Create a service account:
 
 ```bash
-gcloud iam service-accounts create ${TOPIC_NAME}-sa \
+export SERVICE_ACCOUNT=${TOPIC_NAME}-sa
+
+gcloud iam service-accounts create ${SERVICE_ACCOUNT} \
    --display-name "Cloud Run Storage Service Account"
 ```
 
@@ -63,7 +56,7 @@ Give service account permission to invoke the Cloud Run service:
 
 ```bash
 gcloud run services add-iam-policy-binding ${SERVICE_NAME} \
-   --member=serviceAccount:${TOPIC_NAME}-sa@${PROJECT_ID}.iam.gserviceaccount.com \
+   --member=serviceAccount:${SERVICE_ACCOUNT}@${PROJECT_ID}.iam.gserviceaccount.com \
    --role=roles/run.invoker \
    --platform managed
 ```

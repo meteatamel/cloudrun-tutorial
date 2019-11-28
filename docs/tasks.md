@@ -36,7 +36,9 @@ gcloud builds submit \
 Note that we're deploying with `no-allow-unauthenticated` flag. We only want Cloud Tasks to trigger the service:
 
 ```bash
-gcloud run deploy event-display-tasks \
+export SERVICE_NAME=event-display-tasks
+
+gcloud run deploy ${SERVICE_NAME} \
   --image gcr.io/${PROJECT_ID}/event-display \
   --platform managed \
   --no-allow-unauthenticated
@@ -47,7 +49,9 @@ gcloud run deploy event-display-tasks \
 Create a service account:
 
 ```bash
-gcloud iam service-accounts create cloudrun-tasks-sa \
+export SERVICE_ACCOUNT=cloudrun-tasks-sa
+
+gcloud iam service-accounts create ${SERVICE_ACCOUNT} \
    --display-name "Cloud Run Tasks Service Account"
 ```
 
@@ -55,7 +59,7 @@ Give service account permission to invoke the Cloud Run service:
 
 ```bash
 gcloud run services add-iam-policy-binding event-display-tasks \
-   --member=serviceAccount:cloudrun-tasks-sa@${PROJECT_ID}.iam.gserviceaccount.com \
+   --member=serviceAccount:${SERVICE_ACCOUNT}@${PROJECT_ID}.iam.gserviceaccount.com \
    --role=roles/run.invoker
 ```
 
@@ -64,7 +68,9 @@ gcloud run services add-iam-policy-binding event-display-tasks \
 Create a Cloud Tasks queue:
 
 ```bash
-gcloud tasks queues create cloudrun-queue
+export QUEUE_NAME=cloudrun-queue
+
+gcloud tasks queues create ${QUEUE_NAME}
 ```
 
 ## Create a task
@@ -72,11 +78,13 @@ gcloud tasks queues create cloudrun-queue
 You can create tasks programmatically or using gcloud. Here, we'll use gcloud for simplicity. Make sure you replace the url with your own Cloud Run service url you deployed earlier:
 
 ```bash
-gcloud tasks create-http-task --queue cloudrun-queue \
-  --url "https://event-display-tasks-paelpl5x6a-ew.a.run.app" \
+export SERVICE_URL="$(gcloud run services list --platform managed --filter=${SERVICE_NAME} --format='value(URL)')"
+
+gcloud tasks create-http-task --queue ${QUEUE_NAME} \
+  --url ${SERVICE_URL} \
   --body-content "Hello World from Cloud Tasks" \
-  --oidc-service-account-email=cloudrun-tasks-sa@${PROJECT_ID}.iam.gserviceaccount.com \
-  --oidc-token-audience=https://event-display-tasks-paelpl5x6a-ew.a.run.app
+  --oidc-service-account-email=${SERVICE_ACCOUNT}@${PROJECT_ID}.iam.gserviceaccount.com \
+  --oidc-token-audience=${SERVICE_URL}
 ```
 
 ## Test the service

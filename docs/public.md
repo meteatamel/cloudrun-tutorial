@@ -21,11 +21,14 @@ gcloud builds submit \
 ## Deploy to Cloud Run
 
 ```bash
-gcloud run deploy \
+export SERVICE_NAME=helloworld-public
+
+gcloud run deploy ${SERVICE_NAME} \
   --image gcr.io/${PROJECT_ID}/helloworld \
   --platform managed \
   --allow-unauthenticated
 ```
+
 This creates a Cloud Run service and a revision for the current configuration. In the end, you get a url that you can browse to.
 
 You can also see the service in Cloud Run console:
@@ -37,7 +40,9 @@ You can also see the service in Cloud Run console:
 You can test the service by visiting the url mentioned during deployment and in Cloud Run console. 
 
 ```bash
-curl https://helloworld-public-paelpl5x6a-ew.a.run.app
+export SERVICE_URL="$(gcloud run services list --platform managed --filter=${SERVICE_NAME} --format='value(URL)')"
+
+curl ${SERVICE_URL}
 
 Hello World!
 ```
