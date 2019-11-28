@@ -23,14 +23,14 @@ gcloud services enable --project ${PROJECT_ID} \
     run.googleapis.com
 ```
 
-## Samples
+## Use cases
 
 * [Public service](docs/public.md)
-* [Configure](docs/configure.md)
+* [Configure service](docs/configure.md)
 * [Private service](docs/private.md)
 * [Pub/Sub triggered service](docs/pubsub.md)
 * [Scheduled service](docs/scheduled.md)
-* [Task triggered service](docs/task.md)
+* [Task triggered service](docs/tasks.md)
 
 -------
 

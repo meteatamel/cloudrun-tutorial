@@ -54,6 +54,8 @@ gcloud run services add-iam-policy-binding event-display-scheduled \
    --role=roles/run.invoker
 ```
 
+## Create a job 
+
 Create a Cloud Scheduler job to execute every 5 minutes:
 
 ```bash
@@ -76,4 +78,4 @@ You can check the logs of the service to see that it's been triggered by the Clo
 
 ## What's Next?
 
-[Task triggered service](task.md)
+[Task triggered service](tasks.md)

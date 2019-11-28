@@ -60,6 +60,8 @@ gcloud projects add-iam-policy-binding ${PROJECT_ID} \
      --role=roles/iam.serviceAccountTokenCreator
 ```
 
+## Create a push subscription
+
 Create a Cloud Pub/Sub subscription with the service account:
 
 ```bash
