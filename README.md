@@ -29,6 +29,7 @@ gcloud services enable --project ${PROJECT_ID} \
 * [Configure service](docs/configure.md)
 * [Private service](docs/private.md)
 * [Pub/Sub triggered service](docs/pubsub.md)
+* [Storage triggered service](docs/storage.md)
 * [Scheduled service](docs/scheduled.md)
 * [Task triggered service](docs/tasks.md)
 

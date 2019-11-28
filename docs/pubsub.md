@@ -2,7 +2,7 @@
 
 So far, we deployed HTTP triggered public services. However, this is not the only way to trigger Cloud Run services. In this tutorial, let's see how a Cloud Pub/Sub message can trigger an internal service. You can read more about this in Cloud Run [docs](https://cloud.google.com/run/docs/events/pubsub-push).
 
-![Cloud Run Console](./images/cloud-run-pubsub.png)
+![Cloud Run with Pub/Sub](./images/cloud-run-pubsub.png)
 
 ## Create a 'Event Display' service
 
@@ -60,8 +60,6 @@ gcloud projects add-iam-policy-binding ${PROJECT_ID} \
      --role=roles/iam.serviceAccountTokenCreator
 ```
 
-## Create a push subscription
-
 Create a Cloud Pub/Sub subscription with the service account:
 
 ```bash
@@ -94,4 +92,4 @@ Hello World
 
 ## What's Next?
 
-[Scheduled service](scheduled.md)
+[Storage triggered service](storage.md)
