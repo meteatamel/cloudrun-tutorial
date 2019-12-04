@@ -81,7 +81,3 @@ You can check the logs of the service to see that it's been triggered by the Clo
 
 12:20:00.641 GMT POST 200 188 B 32 ms Google-Cloud-Scheduler https://event-display-scheduled-pbelpl5x6a-ew.a.run.app/
 ```
-
-## What's Next?
-
-[Task triggered service](tasks.md)

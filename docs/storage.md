@@ -110,7 +110,3 @@ Check the logs of the service in Cloud Run console, you should see the Cloud Eve
 ```
 2019-11-28 14:20:31.756 GMT Event Display received event: {"message":{"attributes":{"bucketId":"cloudrun-bucket","eventTime":"2019-11-28T14:20:30.345244Z","eventType":"OBJECT_FINALIZE","notificationConfig":"projects/_/buckets/cloudrun-bucket/notificationConfigs/1","objectGeneration":"1574950830345472","objectId":"random.txt","payloadFormat":"JSON_API_V1"},"data":"...","messageId":"795659161806846","message_id":"795659161806846","publishTime":"2019-11-28T14:20:30.859Z","publish_time":"2019-11-28T14:20:30.859Z"},"subscription":"projects/knative-atamel/subscriptions/cloudrun-storage-subscription"}
 ```
-
-## What's Next?
-
-[Scheduled service](scheduled.md)

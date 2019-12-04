@@ -98,7 +98,3 @@ echo SGVsbG8gV29ybGQ= | base64 -D
 
 Hello World
 ```
-
-## What's Next?
-
-[Storage triggered service](storage.md)

@@ -63,7 +63,3 @@ gcloud run services update ${SERVICE_NAME} \
   --platform managed \
   --max-instances 500
 ```
-
-## What's Next?
-
-[Private service](private.md)

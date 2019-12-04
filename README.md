@@ -39,6 +39,7 @@ gcloud services enable --project ${PROJECT_ID} \
 * [Storage triggered service](docs/storage.md)
 * [Scheduled service](docs/scheduled.md)
 * [Task triggered service](docs/tasks.md)
+* [Service to service authentication](docs/auth.md)
 
 -------
 

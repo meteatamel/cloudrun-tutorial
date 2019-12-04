@@ -54,6 +54,3 @@ curl ${SERVICE_URL}
 
 Hello World!
 ```
-## What's Next?
-
-[Configure](configure.md)

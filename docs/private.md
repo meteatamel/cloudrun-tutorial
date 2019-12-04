@@ -49,7 +49,3 @@ ${SERVICE_URL}
 
 Hello World!
 ```
-
-## What's Next?
-
-[Pub/Sub triggered service](pubsub.md)
