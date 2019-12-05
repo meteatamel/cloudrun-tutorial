@@ -31,7 +31,7 @@ Second, let's build and deploy a Cloud Run service that calls the receiving Clou
 Get the url of the receiving service and deploy the public service pointing to that url:
 
 ```bash
-export PRIVATE_SERVICE_URL="$(gcloud run services list --platform managed --filter=receiving --format='value(URL)')"
+export RECEIVING_SERVICE_URL="$(gcloud run services describe receiving --format='value(status.url)' --platform=managed)"
 
 export SERVICE_NAME=calling
 
@@ -44,7 +44,7 @@ gcloud run deploy ${SERVICE_NAME} \
   --image gcr.io/${PROJECT_ID}/calling \
   --platform managed \
   --allow-unauthenticated \
-  --set-env-vars URL=${PRIVATE_SERVICE_URL}
+  --set-env-vars URL=${RECEIVING_SERVICE_URL}
 ```
 
 ## Test the calling service
@@ -52,9 +52,9 @@ gcloud run deploy ${SERVICE_NAME} \
 Test the calling service:
 
 ```bash
-export SERVICE_URL="$(gcloud run services list --platform managed --filter=calling --format='value(URL)')"
+export CALLING_SERVICE_URL="$(gcloud run services describe calling --format='value(status.url)' --platform=managed)"
 
-curl ${SERVICE_URL}
+curl ${CALLING_SERVICE_URL}
 
 Second service says:
 <html><head>
@@ -93,8 +93,6 @@ In the modified version of our calling service in [auth/authenticated](../auth/a
 Let's build and deploy the modified calling service. In [auth/authenticated](../auth/authenticated) folder, first get the service url of the private service and then deploy the modified calling service:
 
 ```bash
-export PRIVATE_SERVICE_URL=...
-
 export SERVICE_NAME=authenticated
 
 gcloud builds submit \
@@ -105,7 +103,7 @@ gcloud run deploy ${SERVICE_NAME} \
   --image gcr.io/${PROJECT_ID}/authenticated \
   --platform managed \
   --allow-unauthenticated \
-  --set-env-vars URL=${PRIVATE_SERVICE_URL}
+  --set-env-vars URL=${RECEIVING_SERVICE_URL}
 ```
 
 ## Test the calling service
@@ -113,9 +111,9 @@ gcloud run deploy ${SERVICE_NAME} \
 Test the modified calling service:
 
 ```bash
-export SERVICE_URL=...
+export AUTH_SERVICE_URL="$(gcloud run services describe authenticated --format='value(status.url)' --platform=managed)"
 
-curl ${SERVICE_URL}
+curl ${AUTH_SERVICE_URL}
 
 Second service says: Hello World!
 ```
@@ -166,9 +164,7 @@ gcloud run services add-iam-policy-binding ${SERVICE_NAME} \
 Finally, everything works as expected:
 
 ```bash
-export SERVICE_URL=...
-
-curl ${SERVICE_URL}
+curl ${AUTH_SERVICE_URL}
 
 Second service says: Hello World!
 ```
