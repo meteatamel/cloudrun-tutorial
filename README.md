@@ -52,6 +52,7 @@ Cloud Run Serving
 Cloud Run Eventing
 
 * [Image processing pipeline - GKE](docs/image-processing-pipeline-gke.md)
+* [BigQuery processing pipeline - GKE](docs/bigquery-processing-pipeline-gke.md)
 
 -------
 

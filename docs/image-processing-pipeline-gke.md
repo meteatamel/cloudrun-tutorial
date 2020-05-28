@@ -59,8 +59,8 @@ Create 2 unique storage buckets to save pre and post processed images:
 ```bash
 export BUCKET1="$(gcloud config get-value core/project)-images-input"
 export BUCKET2="$(gcloud config get-value core/project)-images-output"
-gsutil mb gs://$BUCKET1
-gsutil mb gs://$BUCKET2
+gsutil mb gs://${BUCKET1}
+gsutil mb gs://${BUCKET2}
 ```
 
 ## Enable Vision API
@@ -106,9 +106,9 @@ Create the trigger:
 
 ```bash
 gcloud alpha events triggers create trigger-${SERVICE_NAME} \
---target-service ${SERVICE_NAME} \
+--target-service=${SERVICE_NAME} \
 --type=com.google.cloud.storage.object.finalize \
---parameters bucket=$BUCKET1
+--parameters bucket=${BUCKET1}
 ```
 
 ## Resizer
@@ -147,7 +147,7 @@ Create the trigger:
 
 ```bash
 gcloud alpha events triggers create trigger-${SERVICE_NAME} \
---target-service $SERVICE_NAME \
+--target-service ${SERVICE_NAME} \
 --type=dev.knative.samples.fileuploaded \
 --custom-type
 ```
@@ -188,7 +188,7 @@ Create the trigger:
 
 ```bash
 gcloud alpha events triggers create trigger-${SERVICE_NAME} \
---target-service $SERVICE_NAME \
+--target-service=${SERVICE_NAME} \
 --type=dev.knative.samples.fileresized \
 --custom-type
 ```
@@ -228,7 +228,7 @@ Create the trigger:
 
 ```bash
 gcloud alpha events triggers create trigger-${SERVICE_NAME} \
---target-service $SERVICE_NAME \
+--target-service ${SERVICE_NAME} \
 --type=dev.knative.samples.fileuploaded \
 --custom-type
 ```
@@ -250,14 +250,14 @@ gcloud alpha events triggers list
 You can upload an image to the input storage bucket:
 
 ```bash
-gsutil cp beach.jpg gs://$BUCKET1
+gsutil cp beach.jpg gs://${BUCKET1}
 ```
 
 After a minute or so, you should see resized, watermarked and labelled image in
 the output bucket:
 
 ```bash
-gsutil ls gs://$BUCKET2
+gsutil ls gs://${BUCKET2}
 
 gs://events-atamel-images-output/beach-400x400-watermark.jpeg
 gs://events-atamel-images-output/beach-400x400.png
