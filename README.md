@@ -7,15 +7,21 @@
 Cloud Run is built from open-source [Knative](https://knative.dev/), letting you choose to run your containers either fully managed with Cloud Run, or in your Google Kubernetes Engine cluster with Cloud Run on Anthos, or use Knative on any Kubernetes cluster running anywhere.
 
 ## Slides
+
 There's a [presentation](https://speakerdeck.com/meteatamel/serverless-containers-with-cloud-run) that accompanies the tutorial.
 
 [![Serverless with Cloud Run](./docs/images/serverless-containers-with-cloud-run.png)](https://speakerdeck.com/meteatamel/serverless-containers-with-cloud-run)
 
 ## Setup
 
-[Cloud Run](https://cloud.google.com/run/) is a fully managed service, so there's no setup other than enabling Cloud Run and Cloud Build. [Cloud Run for Anthos](https://cloud.google.com/run/docs/quickstarts/prebuilt-deploy-gke) requires Anthos. This tutorial focuses on managed Cloud Run. 
+[Cloud Run](https://cloud.google.com/run/) is a fully managed service, so
+there's no setup other than enabling Cloud Run and Cloud Build.
 
-First, setup your project id and number that we'll need throughout samples:
+[Cloud Run for
+Anthos](https://cloud.google.com/run/docs/quickstarts/prebuilt-deploy-gke) runs
+on GKE on Anthos platform.
+
+Setup your project id and number that we'll need throughout samples:
 
 ```bash
 export PROJECT_ID="$(gcloud config get-value core/project)"
@@ -30,7 +36,9 @@ gcloud services enable --project ${PROJECT_ID} \
     run.googleapis.com
 ```
 
-## Use cases
+## Samples
+
+Cloud Run Serving
 
 * [Public service](docs/public.md)
 * [Configure service](docs/configure.md)
@@ -40,6 +48,10 @@ gcloud services enable --project ${PROJECT_ID} \
 * [Scheduled service](docs/scheduled.md)
 * [Task triggered service](docs/tasks.md)
 * [Service to service authentication](docs/auth.md)
+
+Cloud Run Eventing
+
+* [Image processing pipeline - GKE](docs/image-processing-pipeline-gke.md)
 
 -------
 
