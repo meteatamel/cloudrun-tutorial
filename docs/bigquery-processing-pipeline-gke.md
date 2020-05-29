@@ -2,7 +2,7 @@
 
 In this sample, we'll build an BigQuery processing pipeline to query some public
 dataset on a schedule, create charts out of the data and then notify users about
-the new charts via SendGrid with Events with Cloud Run on GKE.
+the new charts via SendGrid with **Events with Cloud Run on GKE**.
 
 ![BigQuery Processing Pipeline](./images/bigquery-processing-pipeline-gke.png)
 

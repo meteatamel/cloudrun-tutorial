@@ -1,24 +1,25 @@
-# Image Processing Pipeline - GKE
+# Image Processing Pipeline
 
 In this sample, we'll build an image processing pipeline to connect Google Cloud
-Storage events to various services with **Events with Cloud Run on GKE**.
+Storage events to various services with **Events with Cloud Run (Managed)**.
 
-![Image Processing Pipeline](./images/image-processing-pipeline-gke.png)
+![Image Processing Pipeline](./images/image-processing-pipeline.png)
 
 1. An image is saved to an input Cloud Storage bucket.
-2. Cloud Storage update event is read into Cloud Run via `CloudStorageSource`.
+2. Cloud Storage update event is read into Cloud Run via Audit Logs.
 3. Filter service receives the Cloud Storage event. It uses Vision API to
-   determine if the image is safe. If so, it creates a custom `CloudEvent` of
-   type `dev.knative.samples.fileuploaded` and passes it onwards.
-4. Resizer service receives the `fileuploaded` event, resizes the image using
-   [ImageSharp](https://github.com/SixLabors/ImageSharp) library, saves to the
-   resized image to the output bucket, creates a custom `CloudEvent` of type
-   `dev.knative.samples.fileresized` and passes the event onwards.
-5. Watermark service receives the `fileresized` event, adds a watermark to the
-   image using [ImageSharp](https://github.com/SixLabors/ImageSharp) library and
-   saves the image to the output bucket.
-6. Labeler receives the `fileuploaded` event, extracts labels of the image with
-   Vision API and saves the labels to the output bucket.
+   determine if the image is safe. If so, it creates sends a Pub/Sub message to
+   `fileuploaded` topic.
+4. Resizer service receives the event from `fileuploaded` topic, resizes the
+   image using [ImageSharp](https://github.com/SixLabors/ImageSharp) library,
+   saves to the resized image to the output bucket, sends a Pub/Sub message to
+   `fileresized` topic.
+5. Watermark service receives the event from `fileresized` topic, adds a
+   watermark to the image using
+   [ImageSharp](https://github.com/SixLabors/ImageSharp) library and saves the
+   image to the output bucket.
+6. Labeler receives the event from `fileuploaded` topic, extracts labels of the
+   image with Vision API and saves the labels to the output bucket.
 
 ## Prerequisites
 
@@ -26,35 +27,23 @@ Events for Cloud Run is currently private alpha. We're assuming that you already
 have your project white listed
 [here](https://sites.google.com/corp/view/eventsforcloudrun), read the [Complete
 User
-Guide](https://docs.google.com/document/d/16UHFfDQJlpFb1WsrPZ-DYEP8_HcLbbRPK1ScACXct6U/edit)
-for `Events for Cloud Run - GKE` and setup a GKE cluster with Cloud Run Events
-installed as described in the guide.
-
-If everything is setup correctly, you should see pods running in
-`cloud-run-events` and `knative-eventing` namespaces and a `Broker` in the
-default namespace:
-
-```bash
-kubectl get pods -n cloud-run-events
-kubectl get pods -n knative-eventing
-kubectl get broker
-```
+Guide](https://drive.google.com/open?authuser=0&id=1cgvoMFzcVru_GbzNbZzxKCrKhw4ZJn4xdj2F0Q9pNx8)
+for `Events for Cloud Run`.
 
 You should also set some variables to hold your cluster name and zone. For
 example:
 
 ```bash
-export CLUSTER_NAME=events-cluster
-export CLUSTER_ZONE=europe-west1-b
+export REGION=europe-west1
 
-gcloud config set run/cluster $CLUSTER_NAME
-gcloud config set run/cluster_location $CLUSTER_ZONE
-gcloud config set run/platform gke
+gcloud config set run/region $REGION
+gcloud config set run/platform managed
 ```
 
 ## Create storage buckets
 
-Create 2 unique storage buckets to save pre and post processed images:
+Create 2 unique storage buckets to save pre and post processed images. Make sure
+the bucket is in the same region as your Cloud Run service:
 
 ```bash
 export BUCKET1="$(gcloud config get-value core/project)-images-input"
@@ -65,6 +54,17 @@ gsutil mb -p $(gcloud config get-value project) \
 gsutil mb -p $(gcloud config get-value project) \
    -l $(gcloud config get-value run/region) \
    gs://${BUCKET2}
+```
+
+## Create Pub/Sub topics
+
+Create 2 Pub/Sub topics for intra-service communication:
+
+```bash
+export TOPIC1=fileuploaded
+export TOPIC2=fileresized
+gcloud pubsub topics create ${TOPIC1}
+gcloud pubsub topics create ${TOPIC2}
 ```
 
 ## Enable Vision API
@@ -98,26 +98,29 @@ Deploy the service:
 
 ```bash
 gcloud run deploy ${SERVICE_NAME} \
-  --image gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1
+  --image gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 \
+  --allow-unauthenticated
 ```
 
 ### Trigger
 
-The trigger of the service filters on Cloud Storage finalize events:
-`com.google.cloud.storage.object.finalize`.
+The trigger of the service filters on Audit Logs for Cloud Storage events with
+`methodName` of `storage.objects.create`.
 
 Create the trigger:
 
 ```bash
 gcloud alpha events triggers create trigger-${SERVICE_NAME} \
 --target-service=${SERVICE_NAME} \
---type=com.google.cloud.storage.object.finalize \
---parameters bucket=${BUCKET1}
+--type com.google.cloud.auditlog.event \
+--parameters serviceName=storage.googleapis.com \
+--parameters methodName=storage.objects.create \
+--parameters resourceName=projects/_/buckets/${BUCKET1}
 ```
 
 ## Resizer
 
-This service receives the custom event, resizes the image using
+This service receives the event from `fileuploaded` topic, resizes the image using
 [ImageSharp](https://github.com/SixLabors/ImageSharp) library and passes the
 event onwards.
 
@@ -139,21 +142,21 @@ Deploy the service:
 ```bash
 gcloud run deploy ${SERVICE_NAME} \
   --image gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 \
-  --update-env-vars BUCKET=${BUCKET2}
+  --update-env-vars BUCKET=${BUCKET2} \
+  --allow-unauthenticated
 ```
 
 ### Trigger
 
-The trigger of the service filters on `dev.knative.samples.fileuploaded` event
-types which is the custom event type emitted by the filter service.
+The trigger of the service filters on `fileuploaded` Pub/Sub topic.
 
 Create the trigger:
 
 ```bash
 gcloud alpha events triggers create trigger-${SERVICE_NAME} \
 --target-service ${SERVICE_NAME} \
---type=dev.knative.samples.fileuploaded \
---custom-type
+--type com.google.cloud.pubsub.topic.publish \
+--parameters topic=${TOPIC1}
 ```
 
 ## Watermark
@@ -180,21 +183,21 @@ Deploy the service:
 ```bash
 gcloud run deploy ${SERVICE_NAME} \
   --image gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 \
-  --update-env-vars BUCKET=${BUCKET2}
+  --update-env-vars BUCKET=${BUCKET2} \
+  --allow-unauthenticated
 ```
 
 ### Trigger
 
-The trigger of the service filters on `dev.knative.samples.fileresized` event
-types which is the custom event type emitted by the resizer service.
+The trigger of the service filters on `fileresized` Pub/Sub topic.
 
 Create the trigger:
 
 ```bash
 gcloud alpha events triggers create trigger-${SERVICE_NAME} \
---target-service=${SERVICE_NAME} \
---type=dev.knative.samples.fileresized \
---custom-type
+--target-service ${SERVICE_NAME} \
+--type com.google.cloud.pubsub.topic.publish \
+--parameters topic=${TOPIC2}
 ```
 
 ## Labeler
@@ -220,21 +223,21 @@ Deploy the service:
 ```bash
 gcloud run deploy ${SERVICE_NAME} \
   --image gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 \
-  --update-env-vars BUCKET=${BUCKET2}
+  --update-env-vars BUCKET=${BUCKET2} \
+  --allow-unauthenticated
 ```
 
 ### Trigger
 
-The trigger of the service filters on `dev.knative.samples.fileuploaded` event
-types which is the custom event type emitted by the filter service.
+The trigger of the service filters on `fileuploaded` Pub/Sub topic.
 
 Create the trigger:
 
 ```bash
 gcloud alpha events triggers create trigger-${SERVICE_NAME} \
 --target-service ${SERVICE_NAME} \
---type=dev.knative.samples.fileuploaded \
---custom-type
+--type com.google.cloud.pubsub.topic.publish \
+--parameters topic=${TOPIC1}
 ```
 
 ## Test the pipeline
@@ -244,11 +247,10 @@ Before testing the pipeline, make sure all the triggers are ready:
 ```bash
 gcloud alpha events triggers list
 
-   TRIGGER              EVENT TYPE                                TARGET
-✔  trigger-filter       com.google.cloud.storage.object.finalize  filter
-✔  trigger-labeler      dev.knative.samples.fileuploaded          labeler
-✔  trigger-resizer      dev.knative.samples.fileuploaded          resizer
-✔  trigger-watermarker  dev.knative.samples.fileresized           watermarker
+✔  trigger-filter         com.google.cloud.auditlog.event        filter
+✔  trigger-labeler        com.google.cloud.pubsub.topic.publish  labeler
+✔  trigger-resizer        com.google.cloud.pubsub.topic.publish  resizer
+✔  trigger-watermarker    com.google.cloud.pubsub.topic.publish  watermarker
 ```
 
 You can upload an image to the input storage bucket:
