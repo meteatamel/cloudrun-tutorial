@@ -130,22 +130,25 @@ event onwards.
 
 ### Service
 
-The code of the service is in [resizer](https://github.com/meteatamel/knative-tutorial/tree/master/eventing/image-processing-pipeline/resizer)
+The code of the service is in [resizer](https://github.com/meteatamel/cloudrun-tutorial/tree/master/eventing/image-processing-pipeline/resizer)
 folder.
 
-Inside the folder where [Dockerfile](https://github.com/meteatamel/knative-tutorial/tree/master/eventing/image-processing-pipeline/resizer/csharp/Dockerfile) resides, build and save the container
+Inside the top level
+[image-processing-pipeline](https://github.com/meteatamel/knative-tutorial/blob/master/eventing/image-processing-pipeline/)
+folder, build and push the container:
 image:
 
 ```bash
 export SERVICE_NAME=resizer
-gcloud builds submit --tag gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1
+docker build -t gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:managed -f ${SERVICE_NAME}/csharp/Dockerfile .
+docker push gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:managed
 ```
 
 Deploy the service:
 
 ```bash
 gcloud run deploy ${SERVICE_NAME} \
-  --image gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 \
+  --image gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:managed \
   --update-env-vars BUCKET=${BUCKET2} \
   --allow-unauthenticated
 ```
