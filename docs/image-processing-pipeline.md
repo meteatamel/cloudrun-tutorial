@@ -102,7 +102,7 @@ Deploy the service:
 ```bash
 gcloud run deploy ${SERVICE_NAME} \
   --image gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:managed \
-  --update-env-vars PROJECT_ID=$(gcloud config get-value project) \
+  --update-env-vars PROJECT_ID=$(gcloud config get-value project),BUCKET=${BUCKET1} \
   --allow-unauthenticated
 ```
 
@@ -118,8 +118,7 @@ gcloud alpha events triggers create trigger-${SERVICE_NAME} \
 --target-service=${SERVICE_NAME} \
 --type com.google.cloud.auditlog.event \
 --parameters serviceName=storage.googleapis.com \
---parameters methodName=storage.objects.create \
---parameters resourceName=projects/_/buckets/${BUCKET1}
+--parameters methodName=storage.objects.create
 ```
 
 ## Resizer

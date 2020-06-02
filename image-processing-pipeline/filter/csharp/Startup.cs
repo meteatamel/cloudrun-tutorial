@@ -45,8 +45,13 @@ namespace Filter
             app.UseRouting();
 
             var projectId = Environment.GetEnvironmentVariable("PROJECT_ID");
+            CheckArgExists(projectId, nameof(projectId));
+
             logger.LogInformation($"Event Adapter: pubsub with projectId '{projectId}' and topicId '{PubSubTopicId}'");
             var eventAdapter = new PubSubEventAdapter(logger, projectId, PubSubTopicId);
+
+            var bucket = Environment.GetEnvironmentVariable("BUCKET");
+            CheckArgExists(bucket, nameof(bucket));
 
             app.UseEndpoints(endpoints =>
             {
@@ -58,9 +63,18 @@ namespace Filter
 
                     //"protoPayload" : {"resourceName":"projects/_/buckets/events-atamel-images-input/objects/atamel.jpg}";
                     var tokens = ((string)data.protoPayload.resourceName).Split('/');
-                    var bucket = tokens[3];
-                    var name = tokens[5];
-                    var storageUrl = $"gs://{bucket}/{name}";
+                    var inputBucket = tokens[3];
+                    var inputObjectName = tokens[5];
+
+                    // We need to do this due to a bug in Cloud Run Events that
+                    // does not allow filtering per bucket
+                    if (inputBucket != bucket)
+                    {
+                        logger.LogInformation($"Input bucket '{inputBucket}' does not match with expected bucket '{bucket}'");
+                        return;
+                    }
+
+                    var storageUrl = $"gs://{inputBucket}/{inputObjectName}";
 
                     logger.LogInformation($"Storage url: {storageUrl}");
 
@@ -71,7 +85,7 @@ namespace Filter
                         return;
                     }
 
-                    var replyData = JsonConvert.SerializeObject(new {bucket = data.bucket, name = data.name});
+                    var replyData = JsonConvert.SerializeObject(new {bucket = inputBucket, name = inputObjectName});
                     await eventAdapter.WriteEvent(replyData, context);
                 });
             });
@@ -86,6 +100,14 @@ namespace Filter
                 || response.Racy < Likelihood.Possible
                 || response.Spoof < Likelihood.Possible
                 || response.Violence < Likelihood.Possible;
+        }
+
+        private void CheckArgExists(string arg, string name)
+        {
+            if (string.IsNullOrEmpty(arg))
+            {
+                throw new ArgumentNullException(name);
+            }
         }
     }
 }
