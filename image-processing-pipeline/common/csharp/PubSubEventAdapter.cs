@@ -12,11 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 using System;
+using System.Text;
 using System.Threading.Tasks;
 using CloudNative.CloudEvents;
 using Google.Cloud.PubSub.V1;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json.Linq;
 
 namespace Common
 {
@@ -26,7 +28,7 @@ namespace Common
         private readonly string _topicId;
         private readonly ILogger _logger;
 
-        public PubSubEventAdapter(string projectId, string topicId, ILogger logger)
+        public PubSubEventAdapter(ILogger logger, string projectId = null, string topicId = null)
         {
             _projectId = projectId;
             _topicId = topicId;
@@ -47,6 +49,21 @@ namespace Common
             var publisher = await PublisherClient.CreateAsync(topicName);
             await publisher.PublishAsync(eventData);
             await publisher.ShutdownAsync(TimeSpan.FromSeconds(10));
+        }
+
+        public string ReadPubSubEventData(CloudEvent cloudEvent)
+        {
+            var cloudEventData = JValue.Parse((string)cloudEvent.Data);
+
+            // {
+            // "message": {
+            //     "data": "eyJidWNrZXQiOiJldmVudHMtYXRhbWVsLWltYWdlcy1pbnB1dCIsIm5hbWUiOiJiZWFjaC5qcGcifQ==",
+            // },
+            // "subscription": "projects/events-atamel/subscriptions/cre-europe-west1-trigger-resizer-sub-000"
+            // }
+            var data = (string)cloudEventData["message"]["data"];
+            var decoded = Encoding.UTF8.GetString(Convert.FromBase64String(data));
+            return decoded;
         }
     }
 }

@@ -46,7 +46,7 @@ namespace Filter
 
             var projectId = Environment.GetEnvironmentVariable("PROJECT_ID");
             logger.LogInformation($"Event Adapter: pubsub with projectId '{projectId}' and topicId '{PubSubTopicId}'");
-            var eventAdapter = new PubSubEventAdapter(projectId, PubSubTopicId, logger);
+            var eventAdapter = new PubSubEventAdapter(logger, projectId, PubSubTopicId);
 
             app.UseEndpoints(endpoints =>
             {

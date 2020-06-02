@@ -14,6 +14,9 @@
 using System;
 using System.IO;
 using SixLabors.ImageSharp;
+using SixLabors.Fonts;
+using SixLabors.ImageSharp.Drawing.Processing;
+using SixLabors.ImageSharp.Processing;
 using Google.Cloud.Storage.V1;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -21,19 +24,14 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
-using SixLabors.ImageSharp.Processing;
-using Newtonsoft.Json;
 using Common;
-using System.Text;
 
-namespace Resizer
+// Based on https://github.com/SixLabors/Samples/blob/master/ImageSharp/DrawWaterMarkOnImage/Program.cs
+namespace Watermarker
 {
     public class Startup
     {
-        private const string PubSubTopicId = "fileresized";
-
-        private const int ThumbWidth = 400;
-        private const int ThumbHeight = 400;
+        private const string Watermark = "Google Cloud Platform";
 
         public void ConfigureServices(IServiceCollection services)
         {
@@ -50,9 +48,11 @@ namespace Resizer
 
             app.UseRouting();
 
-            var projectId = Environment.GetEnvironmentVariable("PROJECT_ID");
-            logger.LogInformation($"Event Adapter: pubsub with projectId '{projectId}' and topicId '{PubSubTopicId}'");
-            var eventAdapter = new PubSubEventAdapter(logger, projectId, PubSubTopicId);
+            var eventAdapter = new PubSubEventAdapter(logger);
+
+            var fontCollection = new FontCollection();
+            fontCollection.Install("Arial.ttf");
+            var font = fontCollection.CreateFont("Arial", 10);
 
             app.UseEndpoints(endpoints =>
             {
@@ -78,23 +78,19 @@ namespace Resizer
                             using (var outputStream = new MemoryStream())
                             {
                                 inputStream.Position = 0; // Reset to read
-                                using (Image image = Image.Load(inputStream))
+                                using (var image = Image.Load(inputStream))
                                 {
-                                    image.Mutate(x => x
-                                        .Resize(ThumbWidth, ThumbHeight)
-                                    );
-                                    logger.LogInformation($"Resized image '{inputObjectName}' to {ThumbWidth}x{ThumbHeight}");
-
-                                    image.SaveAsPng(outputStream);
+                                    using (var imageProcessed = image.Clone(ctx => ApplyScalingWaterMarkSimple(ctx, font, Watermark, Color.DeepSkyBlue, 5)))
+                                    {
+                                        logger.LogInformation($"Added watermark to image '{inputObjectName}'");
+                                        imageProcessed.SaveAsJpeg(outputStream);
+                                    }
                                 }
 
                                 var outputBucket = Environment.GetEnvironmentVariable("BUCKET");
-                                var outputObjectName = $"{Path.GetFileNameWithoutExtension(inputObjectName)}-{ThumbWidth}x{ThumbHeight}.png";
-                                await client.UploadObjectAsync(outputBucket, outputObjectName, "image/png", outputStream);
+                                var outputObjectName = $"{Path.GetFileNameWithoutExtension(inputObjectName)}-watermark.jpeg";
+                                await client.UploadObjectAsync(outputBucket, outputObjectName, "image/jpeg", outputStream);
                                 logger.LogInformation($"Uploaded '{outputObjectName}' to bucket '{outputBucket}'");
-
-                                var replyData = JsonConvert.SerializeObject(new {bucket = outputBucket, name = outputObjectName});
-                                await eventAdapter.WriteEvent(replyData, context);
                             }
                         }
                     }
@@ -105,6 +101,37 @@ namespace Resizer
                     }
                 });
             });
+        }
+
+        private static IImageProcessingContext ApplyScalingWaterMarkSimple(IImageProcessingContext processingContext,
+            Font font,
+            string text,
+            Color color,
+            float padding)
+        {
+            Size imgSize = processingContext.GetCurrentSize();
+
+            float targetWidth = imgSize.Width - (padding * 2);
+            float targetHeight = imgSize.Height - (padding * 2);
+
+            // measure the text size
+            FontRectangle size = TextMeasurer.Measure(text, new RendererOptions(font));
+
+            //find out how much we need to scale the text to fill the space (up or down)
+            float scalingFactor = Math.Min(imgSize.Width / size.Width, imgSize.Height / size.Height);
+
+            //create a new font
+            Font scaledFont = new Font(font, scalingFactor * font.Size);
+
+            var center = new PointF(imgSize.Width / 2, imgSize.Height / 2);
+            var textGraphicOptions = new TextGraphicsOptions()
+            {
+                TextOptions = {
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center
+                }
+            };
+            return processingContext.DrawText(textGraphicOptions, text, scaledFont, color, center);
         }
     }
 }
