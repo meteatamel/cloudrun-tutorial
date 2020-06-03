@@ -36,7 +36,7 @@ example:
 ```bash
 export REGION=europe-west1
 
-gcloud config set run/region $REGION
+gcloud config set run/region ${REGION}
 gcloud config set run/platform managed
 ```
 
@@ -83,7 +83,7 @@ to determine if the image is safe. If so, it passes a custom event onwards.
 ### Service
 
 The code of the service is in
-[filter](https://github.com/meteatamel/cloudrun-tutorial/tree/master/eventing/image-processing-pipeline/filter)
+[filter](https://github.com/meteatamel/knative-tutorial/tree/master/eventing/image-processing-pipeline/filter)
 folder.
 
 Inside the top level
@@ -93,16 +93,16 @@ image:
 
 ```bash
 export SERVICE_NAME=filter
-docker build -t gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:managed -f ${SERVICE_NAME}/csharp/Dockerfile .
-docker push gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:managed
+docker build -t gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 -f ${SERVICE_NAME}/csharp/Dockerfile .
+docker push gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1
 ```
 
 Deploy the service:
 
 ```bash
 gcloud run deploy ${SERVICE_NAME} \
-  --image gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:managed \
-  --update-env-vars PROJECT_ID=$(gcloud config get-value project),BUCKET=${BUCKET1} \
+  --image gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 \
+  --update-env-vars BUCKET=${BUCKET1},EVENT_DATA_READER=AuditLog,EVENT_WRITER=PubSub,PROJECT_ID=$(gcloud config get-value project),TOPIC_ID=${TOPIC1} \
   --allow-unauthenticated
 ```
 
@@ -129,26 +129,26 @@ event onwards.
 
 ### Service
 
-The code of the service is in [resizer](https://github.com/meteatamel/cloudrun-tutorial/tree/master/eventing/image-processing-pipeline/resizer)
+The code of the service is in [resizer](https://github.com/meteatamel/knative-tutorial/tree/master/eventing/image-processing-pipeline/resizer)
 folder.
 
 Inside the top level
-[image-processing-pipeline](https://github.com/meteatamel/cloudrun-tutorial/blob/master/eventing/image-processing-pipeline/)
+[image-processing-pipeline](https://github.com/meteatamel/knative-tutorial/blob/master/eventing/image-processing-pipeline/)
 folder, build and push the container:
 image:
 
 ```bash
 export SERVICE_NAME=resizer
-docker build -t gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:managed -f ${SERVICE_NAME}/csharp/Dockerfile .
-docker push gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:managed
+docker build -t gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 -f ${SERVICE_NAME}/csharp/Dockerfile .
+docker push gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1
 ```
 
 Deploy the service:
 
 ```bash
 gcloud run deploy ${SERVICE_NAME} \
-  --image gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:managed \
-  --update-env-vars PROJECT_ID=$(gcloud config get-value project), BUCKET=${BUCKET2} \
+  --image gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 \
+  --update-env-vars BUCKET=${BUCKET2},EVENT_DATA_READER=PubSub,EVENT_WRITER=PubSub,PROJECT_ID=$(gcloud config get-value project),TOPIC_ID=${TOPIC2} \
   --allow-unauthenticated
 ```
 
@@ -173,26 +173,26 @@ image to the output bucket.
 
 ### Service
 
-The code of the service is in [watermarker](https://github.com/meteatamel/cloudrun-tutorial/tree/master/eventing/image-processing-pipeline/watermarker)
+The code of the service is in [watermarker](https://github.com/meteatamel/knative-tutorial/tree/master/eventing/image-processing-pipeline/watermarker)
 folder.
 
 Inside the top level
-[image-processing-pipeline](https://github.com/meteatamel/cloudrun-tutorial/blob/master/eventing/image-processing-pipeline/)
+[image-processing-pipeline](https://github.com/meteatamel/knative-tutorial/blob/master/eventing/image-processing-pipeline/)
 folder, build and push the container:
 image:
 
 ```bash
 export SERVICE_NAME=watermarker
-docker build -t gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:managed -f ${SERVICE_NAME}/csharp/Dockerfile .
-docker push gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:managed
+docker build -t gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 -f ${SERVICE_NAME}/csharp/Dockerfile .
+docker push gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1
 ```
 
 Deploy the service:
 
 ```bash
 gcloud run deploy ${SERVICE_NAME} \
-  --image gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:managed \
-  --update-env-vars BUCKET=${BUCKET2} \
+  --image gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 \
+  --update-env-vars BUCKET=${BUCKET2},EVENT_DATA_READER=PubSub \
   --allow-unauthenticated
 ```
 
@@ -216,26 +216,26 @@ saves the labels to the output bucket.
 
 ### Service
 
-The code of the service is in [labeler](https://github.com/meteatamel/cloudrun-tutorial/tree/master/eventing/image-processing-pipeline/labeler)
+The code of the service is in [labeler](https://github.com/meteatamel/knative-tutorial/tree/master/eventing/image-processing-pipeline/labeler)
 folder.
 
 Inside the top level
-[image-processing-pipeline](https://github.com/meteatamel/cloudrun-tutorial/blob/master/eventing/image-processing-pipeline/)
+[image-processing-pipeline](https://github.com/meteatamel/knative-tutorial/blob/master/eventing/image-processing-pipeline/)
 folder, build and push the container:
 image:
 
 ```bash
 export SERVICE_NAME=labeler
-docker build -t gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:managed -f ${SERVICE_NAME}/csharp/Dockerfile .
-docker push gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:managed
+docker build -t gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 -f ${SERVICE_NAME}/csharp/Dockerfile .
+docker push gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1
 ```
 
 Deploy the service:
 
 ```bash
 gcloud run deploy ${SERVICE_NAME} \
-  --image gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:managed \
-  --update-env-vars BUCKET=${BUCKET2} \
+  --image gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 \
+  --update-env-vars BUCKET=${BUCKET2},EVENT_DATA_READER=PubSub \
   --allow-unauthenticated
 ```
 
@@ -268,7 +268,7 @@ gcloud alpha events triggers list
 You can upload an image to the input storage bucket:
 
 ```bash
-gsutil cp beach.jpg gs://${BUCKET1}
+gsutil cp ../pictures/beach.jpg gs://${BUCKET1}
 ```
 
 After a minute or so, you should see resized, watermarked and labelled image in
