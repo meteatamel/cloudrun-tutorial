@@ -86,11 +86,8 @@ The code of the service is in
 [filter](https://github.com/meteatamel/knative-tutorial/tree/master/eventing/processing-pipelines/image/filter)
 folder.
 
-Inside the folder where [Dockerfile](https://github.com/meteatamel/knative-tutorial/blob/master/eventing/processing-pipelines/image/filter/csharp/Dockerfile) resides, build and save the container
-image:
-
 Inside the top level
-[processing-pipelines](.https://github.com/meteatamel/knative-tutorial/tree/master/eventing/processing-pipelines)
+[processing-pipelines](https://github.com/meteatamel/knative-tutorial/tree/master/eventing/processing-pipelines)
 folder, build and push the container image:
 
 ```bash

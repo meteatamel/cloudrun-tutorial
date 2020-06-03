@@ -70,16 +70,17 @@ the results to a new BigQuery table and passes a custom event onwards.
 
 ### Service
 
-The code of the service is in [query-runner](https://github.com/meteatamel/knative-tutorial/tree/master/eventing/bigquery-processing-pipeline/query-runner)
+The code of the service is in [query-runner](https://github.com/meteatamel/knative-tutorial/tree/master/eventing/processing-pipelines/bigquery/query-runner)
 folder.
 
-Inside the folder where
-[Dockerfile](https://github.com/meteatamel/knative-tutorial/blob/master/eventing/bigquery-processing-pipeline/query-runner/csharp/Dockerfile)
-resides, build and save the container image:
+Inside the top level
+[processing-pipelines](.https://github.com/meteatamel/knative-tutorial/tree/master/eventing/processing-pipelines)
+folder, build and push the container image:
 
 ```bash
 export SERVICE_NAME=query-runner
-gcloud builds submit --tag gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1
+docker build -t gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 -f image/${SERVICE_NAME}/csharp/Dockerfile .
+docker push gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1
 ```
 
 Deploy the service while passing in `PROJECT_ID` with your actual project id.
@@ -136,16 +137,17 @@ Cloud Storage.
 
 ### Service
 
-The code of the service is in [chart-creator](https://github.com/meteatamel/knative-tutorial/tree/master/eventing/bigquery-processing-pipeline/chart-creator)
+The code of the service is in [chart-creator](https://github.com/meteatamel/knative-tutorial/tree/master/eventing/processing-pipelines/bigquery/chart-creator)
 folder.
 
-Inside the folder where
-[Dockerfile](https://github.com/meteatamel/knative-tutorial/blob/master/eventing/bigquery-processing-pipeline/chart-creator/python/Dockerfile)
-resides, build and save the container image:
+Inside the
+[chart-creator/python](../eventing/processing-pipelines/bigquery/chart-creator/python)
+folder, build and push the container image:
 
 ```bash
 export SERVICE_NAME=chart-creator
-gcloud builds submit --tag gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1
+docker build -t gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 .
+docker push gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1
 ```
 
 Deploy the service while passing in `BUCKET` with the bucket you created earlier.
@@ -181,16 +183,17 @@ for more details on how to setup SendGrid.
 ### Service
 
 The code of the service is in
-[notifier](https://github.com/meteatamel/knative-tutorial/tree/master/eventing/bigquery-processing-pipeline/notifier)
+[notifier](https://github.com/meteatamel/knative-tutorial/tree/master/eventing/processing-pipelines/bigquery/notifier)
 folder.
 
-Inside the folder where
-[Dockerfile](https://github.com/meteatamel/knative-tutorial/blob/master/eventing/bigquery-processing-pipeline/notifier/python/Dockerfile)
-resides, build and save the container image:
+Inside the
+[notifier/python](../eventing/processing-pipelines/bigquery/notifier/python)
+folder, build and push the container image:
 
 ```bash
 export SERVICE_NAME=notifier
-gcloud builds submit --tag gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1
+docker build -t gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 .
+docker push gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1
 ```
 
 Deploy the service while passing in `TO_EMAILS` to email address where you want
