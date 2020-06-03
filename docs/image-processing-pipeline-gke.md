@@ -83,15 +83,19 @@ to determine if the image is safe. If so, it passes a custom event onwards.
 ### Service
 
 The code of the service is in
-[filter](https://github.com/meteatamel/knative-tutorial/tree/master/eventing/image-processing-pipeline/filter)
+[filter](https://github.com/meteatamel/knative-tutorial/tree/master/eventing/processing-pipelines/image/filter)
 folder.
 
-Inside the folder where [Dockerfile](https://github.com/meteatamel/knative-tutorial/blob/master/eventing/image-processing-pipeline/filter/csharp/Dockerfile) resides, build and save the container
+Inside the folder where [Dockerfile](https://github.com/meteatamel/knative-tutorial/blob/master/eventing/processing-pipelines/image/filter/csharp/Dockerfile) resides, build and save the container
 image:
+
+Inside the top level
+[processing-pipelines](.https://github.com/meteatamel/knative-tutorial/tree/master/eventing/processing-pipelines)
+folder, build and push the container image:
 
 ```bash
 export SERVICE_NAME=filter
-docker build -t gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 -f ${SERVICE_NAME}/csharp/Dockerfile .
+docker build -t gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 -f image/${SERVICE_NAME}/csharp/Dockerfile .
 docker push gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1
 ```
 
@@ -125,15 +129,16 @@ event onwards.
 
 ### Service
 
-The code of the service is in [resizer](https://github.com/meteatamel/knative-tutorial/tree/master/eventing/image-processing-pipeline/resizer)
+The code of the service is in [resizer](https://github.com/meteatamel/knative-tutorial/tree/master/eventing/processing-pipelines/image/resizer)
 folder.
 
-Inside the folder where [Dockerfile](https://github.com/meteatamel/knative-tutorial/tree/master/eventing/image-processing-pipeline/resizer/csharp/Dockerfile) resides, build and save the container
-image:
+Inside the top level
+[processing-pipelines](.https://github.com/meteatamel/knative-tutorial/tree/master/eventing/processing-pipelines)
+folder, build and push the container image:
 
 ```bash
 export SERVICE_NAME=resizer
-docker build -t gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 -f ${SERVICE_NAME}/csharp/Dockerfile .
+docker build -t gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 -f image/${SERVICE_NAME}/csharp/Dockerfile .
 docker push gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1
 ```
 
@@ -167,15 +172,16 @@ image to the output bucket.
 
 ### Service
 
-The code of the service is in [watermarker](https://github.com/meteatamel/knative-tutorial/tree/master/eventing/image-processing-pipeline/watermarker)
+The code of the service is in [watermarker](https://github.com/meteatamel/knative-tutorial/tree/master/eventing/processing-pipelines/image/watermarker)
 folder.
 
-Inside the folder where [Dockerfile](https://github.com/meteatamel/knative-tutorial/tree/master/eventing/image-processing-pipeline/watermarker/csharp/Dockerfile) resides, build and save the container
-image:
+Inside the top level
+[processing-pipelines](.https://github.com/meteatamel/knative-tutorial/tree/master/eventing/processing-pipelines)
+folder, build and push the container image:
 
 ```bash
 export SERVICE_NAME=watermarker
-docker build -t gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 -f ${SERVICE_NAME}/csharp/Dockerfile .
+docker build -t gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 -f image/${SERVICE_NAME}/csharp/Dockerfile .
 docker push gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1
 ```
 
@@ -208,15 +214,16 @@ saves the labels to the output bucket.
 
 ### Service
 
-The code of the service is in [labeler](https://github.com/meteatamel/knative-tutorial/tree/master/eventing/image-processing-pipeline/labeler)
+The code of the service is in [labeler](https://github.com/meteatamel/knative-tutorial/tree/master/eventing/processing-pipelines/image/labeler)
 folder.
 
-Inside the folder where [Dockerfile](https://github.com/meteatamel/knative-tutorial/tree/master/eventing/image-processing-pipeline/labeler/csharp/Dockerfile) resides, build and save the container
-image:
+Inside the top level
+[processing-pipelines](.https://github.com/meteatamel/knative-tutorial/tree/master/eventing/processing-pipelines)
+folder, build and push the container image:
 
 ```bash
 export SERVICE_NAME=labeler
-docker build -t gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 -f ${SERVICE_NAME}/csharp/Dockerfile .
+docker build -t gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 -f image/${SERVICE_NAME}/csharp/Dockerfile .
 docker push gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1
 ```
 
