@@ -47,8 +47,8 @@ example:
 export CLUSTER_NAME=events-cluster
 export CLUSTER_ZONE=europe-west1-b
 
-gcloud config set run/cluster $CLUSTER_NAME
-gcloud config set run/cluster_location $CLUSTER_ZONE
+gcloud config set run/cluster ${CLUSTER_NAME}
+gcloud config set run/cluster_location ${CLUSTER_ZONE}
 gcloud config set run/platform gke
 ```
 
@@ -91,14 +91,16 @@ image:
 
 ```bash
 export SERVICE_NAME=filter
-gcloud builds submit --tag gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1
+docker build -t gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 -f ${SERVICE_NAME}/csharp/Dockerfile .
+docker push gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1
 ```
 
 Deploy the service:
 
 ```bash
 gcloud run deploy ${SERVICE_NAME} \
-  --image gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1
+  --image gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 \
+  --update-env-vars BUCKET=${BUCKET1}
 ```
 
 ### Trigger
@@ -131,7 +133,8 @@ image:
 
 ```bash
 export SERVICE_NAME=resizer
-gcloud builds submit --tag gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1
+docker build -t gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 -f ${SERVICE_NAME}/csharp/Dockerfile .
+docker push gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1
 ```
 
 Deploy the service:
@@ -172,7 +175,8 @@ image:
 
 ```bash
 export SERVICE_NAME=watermarker
-gcloud builds submit --tag gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1
+docker build -t gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 -f ${SERVICE_NAME}/csharp/Dockerfile .
+docker push gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1
 ```
 
 Deploy the service:
@@ -212,7 +216,8 @@ image:
 
 ```bash
 export SERVICE_NAME=labeler
-gcloud builds submit --tag gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1
+docker build -t gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 -f ${SERVICE_NAME}/csharp/Dockerfile .
+docker push gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1
 ```
 
 Deploy the service:
@@ -254,7 +259,7 @@ gcloud alpha events triggers list
 You can upload an image to the input storage bucket:
 
 ```bash
-gsutil cp beach.jpg gs://${BUCKET1}
+gsutil cp ../pictures/beach.jpg gs://${BUCKET1}
 ```
 
 After a minute or so, you should see resized, watermarked and labelled image in
