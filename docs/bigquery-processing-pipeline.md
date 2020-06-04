@@ -1,22 +1,21 @@
-# BigQuery Processing Pipeline - GKE
+# BigQuery Processing Pipeline
 
 In this sample, we'll build an BigQuery processing pipeline to query some public
 dataset on a schedule, create charts out of the data and then notify users about
-the new charts via SendGrid with **Events with Cloud Run on GKE**.
+the new charts via SendGrid with **Events with Cloud Run Managed**.
 
-![BigQuery Processing Pipeline](./images/bigquery-processing-pipeline-gke.png)
+![BigQuery Processing Pipeline](./images/bigquery-processing-pipeline.png)
 
-1. Two `CloudSchedulerSources` are setup to call the `QueryRunner` service once
-   a day for two countries.
+1. Two `CloudScheduler` jobs are setup to call the `QueryRunner` service once
+   a day for two countries via PubSub Topic `queryscheduled`.
 2. `QueryRunner` receives the scheduler event for both country, queries Covid-19
    cases for the country using BigQuery's public Covid-19 dataset and saves the
-   result in a separate BigQuery table. Once done, `QueryRunner` returns a custom
-   `CloudEvent` of type `dev.knative.samples.querycompleted`.
-3. `ChartCreator` receives the `querycompleted` event, creates a chart from
-   BigQuery data using `mathplotlib` and saves it to a Cloud Storage bucket.
-4. `Notifier` receives the `com.google.cloud.storage.object.finalize` event from
-   the bucket via a `CloudStorageSource` and sends an email notification to
-   users using SendGrid.
+   result in a separate BigQuery table. Once done, `QueryRunner` sends a Pub/Sub
+   message to `querycompleted` topic.
+3. `ChartCreator` receives the event from `querycompleted` topic, creates a
+   chart from BigQuery data using `mathplotlib` and saves it to a Cloud Storage bucket.
+4. `Notifier` receives the Cloud Storage event from the bucket via an `AuditLog`
+   and sends an email notification to users using SendGrid.
 
 ## Prerequisites
 
@@ -24,9 +23,8 @@ Events for Cloud Run is currently private alpha. We're assuming that you already
 have your project white listed
 [here](https://sites.google.com/corp/view/eventsforcloudrun), read the [Complete
 User
-Guide](https://docs.google.com/document/d/16UHFfDQJlpFb1WsrPZ-DYEP8_HcLbbRPK1ScACXct6U/edit)
-for Events for Cloud Run - GKE and setup a GKE cluster with Cloud Run Events
-installed as described in the guide.
+Guide](https://drive.google.com/open?authuser=0&id=1cgvoMFzcVru_GbzNbZzxKCrKhw4ZJn4xdj2F0Q9pNx8)
+for `Events for Cloud Run`.
 
 If everything is setup correctly, you should see pods running in
 `cloud-run-events` and `knative-eventing` namespaces and a `Broker` in the
@@ -38,28 +36,40 @@ kubectl get pods -n knative-eventing
 kubectl get broker
 ```
 
-You should also set some variables to hold your cluster name and zone. For
+You should also set some variables to hold your region and zone. For
 example:
 
 ```bash
-export CLUSTER_NAME=events-cluster
-export CLUSTER_ZONE=europe-west1-b
+export REGION=europe-west1
 
-gcloud config set run/cluster $CLUSTER_NAME
-gcloud config set run/cluster_location $CLUSTER_ZONE
-gcloud config set run/platform gke
+gcloud config set run/region ${REGION}
+gcloud config set run/platform managed
 ```
 
 ## Create a storage bucket
 
 Create a unique storage bucket to save the charts and make sure the bucket and
-the charts in the bucket are all public:
+the charts in the bucket are all public and in the same region as your Cloud Run
+service:
 
 ```bash
 export BUCKET="$(gcloud config get-value core/project)-charts"
-gsutil mb gs://${BUCKET}
+gsutil mb -p $(gcloud config get-value project) \
+   -l $(gcloud config get-value run/region) \
+   gs://${BUCKET}
 gsutil uniformbucketlevelaccess set on gs://${BUCKET}
 gsutil iam ch allUsers:objectViewer gs://${BUCKET}
+```
+
+## Create a Pub/Sub topic
+
+Create a Pub/Sub topics for intra-service communication:
+
+```bash
+export TOPIC1=queryscheduled
+export TOPIC2=querycompleted
+gcloud pubsub topics create ${TOPIC1}
+gcloud pubsub topics create ${TOPIC2}
 ```
 
 ## Query Runner
@@ -89,15 +99,15 @@ This is needed for the BigQuery client:
 ```bash
 gcloud run deploy ${SERVICE_NAME} \
   --image gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 \
-  --update-env-vars PROJECT_ID=$(gcloud config get-value project)
+  --update-env-vars PROJECT_ID=$(gcloud config get-value project),EVENT_DATA_READER=PubSub,EVENT_WRITER=PubSub,TOPIC_ID=${TOPIC2}
 ```
 
-### Trigger
+### Scheduler job
 
 The service will be triggered with Cloud Scheduler. More specifically, we will
 create two triggers for two countries (United Kingdom and Cyprus) and Cloud
-Scheduler will emit `com.google.cloud.scheduler.job.execute` events once a day
-for each country which in turn will call the service.
+Scheduler will emit to `queryscheduled` topic once a day for each country which
+in turn will call the service.
 
 Set an environment variable for scheduler location, ideally in the same region
 as your Cloud Run service. For example:
@@ -106,26 +116,35 @@ as your Cloud Run service. For example:
 export SCHEDULER_LOCATION=europe-west1
 ```
 
-Create the trigger for UK:
+Create the scheduler job for UK:
 
 ```bash
-gcloud alpha events triggers create trigger-${SERVICE_NAME}-uk \
---target-service=${SERVICE_NAME} \
---type=com.google.cloud.scheduler.job.execute \
---parameters location=${SCHEDULER_LOCATION} \
---parameters schedule="0 16 * * *" \
---parameters data="United Kingdom"
+gcloud scheduler jobs create pubsub cre-scheduler-uk \
+  --schedule="0 16 * * *" \
+  --topic=${TOPIC1} \
+  --message-body="United Kingdom"
 ```
 
-Create the trigger for Cyprus:
+Create the scheduler job for Cyprus:
 
 ```bash
-gcloud alpha events triggers create trigger-${SERVICE_NAME}-cy \
---target-service=${SERVICE_NAME} \
---type=com.google.cloud.scheduler.job.execute \
---parameters location=${SCHEDULER_LOCATION} \
---parameters schedule="0 17 * * *" \
---parameters data="Cyprus"
+gcloud scheduler jobs create pubsub cre-scheduler-cy \
+  --schedule="0 17 * * *" \
+  --topic=${TOPIC1} \
+  --message-body="Cyprus"
+```
+
+### Trigger
+
+The trigger of the service filters on `queryscheduled` Pub/Sub topic.
+
+Create the trigger:
+
+```bash
+gcloud alpha events triggers create trigger-${SERVICE_NAME} \
+--target-service ${SERVICE_NAME} \
+--type com.google.cloud.pubsub.topic.publish \
+--parameters topic=${TOPIC1}
 ```
 
 ## Chart Creator
@@ -137,7 +156,7 @@ Cloud Storage.
 
 ### Service
 
-The code of the service is in [chart-creator](https://github.com/meteatamel/knative-tutorial/tree/master/eventing/processing-pipelines/bigquery/chart-creator)
+The code of the service is in [chart-creator](https://github.com/meteatamel/knative-tutorial/tree/master/eventing/bigquery-processing-pipeline/chart-creator)
 folder.
 
 Inside the
@@ -155,21 +174,21 @@ Deploy the service while passing in `BUCKET` with the bucket you created earlier
 ```bash
 gcloud run deploy ${SERVICE_NAME} \
   --image gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 \
-  --update-env-vars BUCKET=${BUCKET}
+  --update-env-vars BUCKET=${BUCKET},EVENT_DATA_READER=PubSub \
+  --allow-unauthenticated
 ```
 
 ### Trigger
 
-The trigger of the service filters on `dev.knative.samples.querycompleted` event
-types which is the custom event type emitted by the query service.
+The trigger of the service filters on `querycompleted` Pub/Sub topic.
 
 Create the trigger:
 
 ```bash
 gcloud alpha events triggers create trigger-${SERVICE_NAME} \
---target-service=${SERVICE_NAME} \
---type=dev.knative.samples.querycompleted \
---custom-type
+--target-service ${SERVICE_NAME} \
+--type com.google.cloud.pubsub.topic.publish \
+--parameters topic=${TOPIC2}
 ```
 
 ## Notifier
@@ -183,7 +202,7 @@ for more details on how to setup SendGrid.
 ### Service
 
 The code of the service is in
-[notifier](https://github.com/meteatamel/knative-tutorial/tree/master/eventing/processing-pipelines/bigquery/notifier)
+[notifier](https://github.com/meteatamel/knative-tutorial/tree/master/eventing/bigquery-processing-pipeline/notifier)
 folder.
 
 Inside the
@@ -204,22 +223,23 @@ export TO_EMAILS=youremail@gmail.com
 export SENDGRID_API_KEY=yoursendgridapikey
 gcloud run deploy ${SERVICE_NAME} \
   --image gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 \
-  --update-env-vars TO_EMAILS=${TO_EMAILS},SENDGRID_API_KEY=${SENDGRID_API_KEY}
+  --update-env-vars TO_EMAILS=${TO_EMAILS},SENDGRID_API_KEY=${SENDGRID_API_KEY},BUCKET=${BUCKET},EVENT_DATA_READER=AuditLog \
+  --allow-unauthenticated
 ```
 
 ### Trigger
 
-The trigger of the service filters on `com.google.cloud.storage.object.finalize` event
-which is the event type emitted by the Cloud Storage when a file is saved to the
-bucket.
+The trigger of the service filters on Audit Logs for Cloud Storage events with
+`methodName` of `storage.objects.create`.
 
 Create the trigger:
 
 ```bash
 gcloud alpha events triggers create trigger-${SERVICE_NAME} \
 --target-service=${SERVICE_NAME} \
---type=com.google.cloud.storage.object.finalize \
---parameters bucket=${BUCKET}
+--type com.google.cloud.auditlog.event \
+--parameters serviceName=storage.googleapis.com \
+--parameters methodName=storage.objects.create
 ```
 
 ## Test the pipeline
@@ -230,10 +250,9 @@ Before testing the pipeline, make sure all the triggers are ready:
 gcloud alpha events triggers list
 
    TRIGGER                  EVENT TYPE                                TARGET
-✔  trigger-chart-creator    dev.knative.samples.querycompleted        chart-creator
-✔  trigger-notifier         com.google.cloud.storage.object.finalize  notifier
-✔  trigger-query-runner-cy  com.google.cloud.scheduler.job.execute    query-runner
-✔  trigger-query-runner-uk  com.google.cloud.scheduler.job.execute    query-runner
+✔  trigger-chart-creator    com.google.cloud.pubsub.topic.publish     chart-creator
+✔  trigger-notifier         com.google.cloud.auditlog.event           notifier
+✔  trigger-query-runner     com.google.cloud.pubsub.topic.publish     query-runner
 ```
 
 You can wait for Cloud Scheduler to trigger the services or you can manually
@@ -244,16 +263,16 @@ Find the jobs IDs:
 ```bash
 gcloud scheduler jobs list
 
-ID                                                  LOCATION      SCHEDULE (TZ)          TARGET_TYPE  STATE
-cre-scheduler-2bcb33d8-3165-4eca-9428-feb99bc320e2  europe-west1  0 16 * * * (UTC)       Pub/Sub      ENABLED
-cre-scheduler-714c0b82-c441-42f4-8f99-0e2eac9a5869  europe-west1  0 17 * * * (UTC)       Pub/Sub      ENABLED
+ID                LOCATION      SCHEDULE (TZ)         TARGET_TYPE  STATE
+cre-scheduler-cy  europe-west1  0 17 * * * (Etc/UTC)  Pub/Sub      ENABLED
+cre-scheduler-uk  europe-west1  0 16 * * * (Etc/UTC)  Pub/Sub      ENABLED
 ```
 
 Trigger the jobs manually:
 
 ```bash
-gcloud scheduler jobs run cre-scheduler-2bcb33d8-3165-4eca-9428-feb99bc320e2
-gcloud scheduler jobs run cre-scheduler-714c0b82-c441-42f4-8f99-0e2eac9a5869
+gcloud scheduler jobs run cre-scheduler-cy
+gcloud scheduler jobs run cre-scheduler-uk
 ```
 
 After a minute or so, you should see 2 charts in the bucket:
