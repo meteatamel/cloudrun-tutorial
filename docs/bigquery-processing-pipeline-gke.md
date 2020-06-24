@@ -204,7 +204,7 @@ export TO_EMAILS=youremail@gmail.com
 export SENDGRID_API_KEY=yoursendgridapikey
 gcloud run deploy ${SERVICE_NAME} \
   --image gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 \
-  --update-env-vars TO_EMAILS=${TO_EMAILS},SENDGRID_API_KEY=${SENDGRID_API_KEY}
+  --update-env-vars TO_EMAILS=${TO_EMAILS},SENDGRID_API_KEY=${SENDGRID_API_KEY},BUCKET=${BUCKET}
 ```
 
 ### Trigger
