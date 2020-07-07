@@ -26,17 +26,7 @@ User
 Guide](https://drive.google.com/open?authuser=0&id=1cgvoMFzcVru_GbzNbZzxKCrKhw4ZJn4xdj2F0Q9pNx8)
 for `Events for Cloud Run`.
 
-If everything is setup correctly, you should see pods running in
-`cloud-run-events` and `knative-eventing` namespaces and a `Broker` in the
-default namespace:
-
-```bash
-kubectl get pods -n cloud-run-events
-kubectl get pods -n knative-eventing
-kubectl get broker
-```
-
-You should also set some variables to hold your region and zone. For
+You should set some variables to hold your region and zone. For
 example:
 
 ```bash
