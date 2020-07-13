@@ -1,0 +1,8 @@
+default:
+  target: dev
+  outputs:
+    dev:
+      type: bigquery
+      method: oauth
+      project: events-atamel
+      dataset: temp

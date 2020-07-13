@@ -56,6 +56,10 @@ Cloud Run Eventing
 * [BigQuery processing pipeline](docs/bigquery-processing-pipeline.md)
 * [BigQuery processing pipeline - GKE](docs/bigquery-processing-pipeline-gke.md)
 
+Other
+
+* [Scheduled dbt service with BigQuery](docs/scheduled-dbt-service-bigquery.md)
+
 -------
 
 This is not an official Google product.
