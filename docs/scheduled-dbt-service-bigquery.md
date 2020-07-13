@@ -1,4 +1,4 @@
-# Scheduled dbt service with BigQuery
+# Scheduled Cloud Run dbt service with BigQuery
 
 [dbt](https://docs.getdbt.com/) is an open source project to build data
 transformation pipelines with supported databases such as BigQuery, Postgres,
