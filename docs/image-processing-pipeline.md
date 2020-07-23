@@ -102,7 +102,7 @@ Deploy the service:
 ```bash
 gcloud run deploy ${SERVICE_NAME} \
   --image gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 \
-  --update-env-vars BUCKET=${BUCKET1},EVENT_DATA_READER=AuditLog,EVENT_WRITER=PubSub,PROJECT_ID=$(gcloud config get-value project),TOPIC_ID=${TOPIC1} \
+  --update-env-vars BUCKET=${BUCKET1},EVENT_WRITER=PubSub,PROJECT_ID=$(gcloud config get-value project),TOPIC_ID=${TOPIC1} \
   --allow-unauthenticated
 ```
 
@@ -147,7 +147,7 @@ Deploy the service:
 ```bash
 gcloud run deploy ${SERVICE_NAME} \
   --image gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 \
-  --update-env-vars BUCKET=${BUCKET2},EVENT_DATA_READER=PubSub,EVENT_WRITER=PubSub,PROJECT_ID=$(gcloud config get-value project),TOPIC_ID=${TOPIC2} \
+  --update-env-vars BUCKET=${BUCKET2},EVENT_WRITER=PubSub,PROJECT_ID=$(gcloud config get-value project),TOPIC_ID=${TOPIC2} \
   --allow-unauthenticated
 ```
 
@@ -190,7 +190,7 @@ Deploy the service:
 ```bash
 gcloud run deploy ${SERVICE_NAME} \
   --image gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 \
-  --update-env-vars BUCKET=${BUCKET2},EVENT_DATA_READER=PubSub \
+  --update-env-vars BUCKET=${BUCKET2} \
   --allow-unauthenticated
 ```
 
@@ -232,7 +232,7 @@ Deploy the service:
 ```bash
 gcloud run deploy ${SERVICE_NAME} \
   --image gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 \
-  --update-env-vars BUCKET=${BUCKET2},EVENT_DATA_READER=PubSub \
+  --update-env-vars BUCKET=${BUCKET2} \
   --allow-unauthenticated
 ```
 

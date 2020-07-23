@@ -89,7 +89,7 @@ This is needed for the BigQuery client:
 ```bash
 gcloud run deploy ${SERVICE_NAME} \
   --image gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 \
-  --update-env-vars PROJECT_ID=$(gcloud config get-value project),EVENT_DATA_READER=PubSub,EVENT_WRITER=PubSub,TOPIC_ID=${TOPIC2}
+  --update-env-vars PROJECT_ID=$(gcloud config get-value project),EVENT_WRITER=PubSub,TOPIC_ID=${TOPIC2}
 ```
 
 ### Scheduler job
@@ -164,7 +164,7 @@ Deploy the service while passing in `BUCKET` with the bucket you created earlier
 ```bash
 gcloud run deploy ${SERVICE_NAME} \
   --image gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 \
-  --update-env-vars BUCKET=${BUCKET},EVENT_DATA_READER=PubSub \
+  --update-env-vars BUCKET=${BUCKET} \
   --allow-unauthenticated
 ```
 
@@ -213,7 +213,7 @@ export TO_EMAILS=youremail@gmail.com
 export SENDGRID_API_KEY=yoursendgridapikey
 gcloud run deploy ${SERVICE_NAME} \
   --image gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 \
-  --update-env-vars TO_EMAILS=${TO_EMAILS},SENDGRID_API_KEY=${SENDGRID_API_KEY},BUCKET=${BUCKET},EVENT_DATA_READER=AuditLog \
+  --update-env-vars TO_EMAILS=${TO_EMAILS},SENDGRID_API_KEY=${SENDGRID_API_KEY},BUCKET=${BUCKET} \
   --allow-unauthenticated
 ```
 
