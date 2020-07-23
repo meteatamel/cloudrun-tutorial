@@ -57,8 +57,8 @@ gcloud config set run/platform gke
 Create 2 unique storage buckets to save pre and post processed images:
 
 ```bash
-export BUCKET1="$(gcloud config get-value core/project)-images-input"
-export BUCKET2="$(gcloud config get-value core/project)-images-output"
+export BUCKET1="$(gcloud config get-value core/project)-images-input-gke"
+export BUCKET2="$(gcloud config get-value core/project)-images-output-gke"
 gsutil mb -p $(gcloud config get-value project) \
    -l $(gcloud config get-value run/region) \
    gs://${BUCKET1}

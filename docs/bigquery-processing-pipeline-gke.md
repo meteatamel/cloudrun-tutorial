@@ -56,7 +56,7 @@ Create a unique storage bucket to save the charts and make sure the bucket and
 the charts in the bucket are all public:
 
 ```bash
-export BUCKET="$(gcloud config get-value core/project)-charts"
+export BUCKET="$(gcloud config get-value core/project)-charts-gke"
 gsutil mb gs://${BUCKET}
 gsutil uniformbucketlevelaccess set on gs://${BUCKET}
 gsutil iam ch allUsers:objectViewer gs://${BUCKET}
