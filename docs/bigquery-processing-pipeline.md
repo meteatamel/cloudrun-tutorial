@@ -89,7 +89,7 @@ This is needed for the BigQuery client:
 ```bash
 gcloud run deploy ${SERVICE_NAME} \
   --image gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 \
-  --update-env-vars PROJECT_ID=$(gcloud config get-value project),EVENT_WRITER=PubSub,TOPIC_ID=${TOPIC2}
+  --update-env-vars PROJECT_ID=$(gcloud config get-value project),TOPIC_ID=${TOPIC2}
 ```
 
 ### Scheduler job
