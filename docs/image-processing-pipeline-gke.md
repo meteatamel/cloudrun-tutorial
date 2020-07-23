@@ -100,8 +100,7 @@ Deploy the service:
 
 ```bash
 gcloud run deploy ${SERVICE_NAME} \
-  --image gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 \
-  --update-env-vars BUCKET=${BUCKET1}
+  --image gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1
 ```
 
 ### Trigger
