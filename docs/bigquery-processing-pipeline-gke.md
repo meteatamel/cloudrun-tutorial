@@ -18,36 +18,69 @@ the new charts via SendGrid with **Events with Cloud Run on GKE**.
    the bucket via a `CloudStorageSource` and sends an email notification to
    users using SendGrid.
 
-## Prerequisites
+## Set zone and platform
 
-Events for Cloud Run is currently private alpha. We're assuming that you already
-have your project white listed
-[here](https://sites.google.com/corp/view/eventsforcloudrun), read the [Complete
-User
-Guide](https://docs.google.com/document/d/16UHFfDQJlpFb1WsrPZ-DYEP8_HcLbbRPK1ScACXct6U/edit)
-for Events for Cloud Run - GKE and setup a GKE cluster with Cloud Run Events
-installed as described in the guide.
-
-If everything is setup correctly, you should see pods running in
-`cloud-run-events` and `knative-eventing` namespaces and a `Broker` in the
-default namespace:
-
-```bash
-kubectl get pods -n cloud-run-events
-kubectl get pods -n knative-eventing
-kubectl get broker
-```
-
-You should also set some variables to hold your cluster name and zone. For
-example:
+Set some variables to hold your cluster name and zone. For example:
 
 ```bash
 export CLUSTER_NAME=events-cluster
 export CLUSTER_ZONE=europe-west1-b
 
-gcloud config set run/cluster $CLUSTER_NAME
-gcloud config set run/cluster_location $CLUSTER_ZONE
+gcloud config set run/cluster ${CLUSTER_NAME}
+gcloud config set run/cluster_location ${CLUSTER_ZONE}
 gcloud config set run/platform gke
+```
+
+## Create a GKE cluster with Cloud Run Events
+
+Create a GKE cluster with the following addons enabled: CloudRun,
+HttpLoadBalancing, HorizontalPodAutoscaling:
+
+```sh
+gcloud beta container clusters create ${CLUSTER_NAME} \
+  --addons=HttpLoadBalancing,HorizontalPodAutoscaling,CloudRun \
+  --machine-type=n1-standard-4 \
+  --enable-autoscaling --min-nodes=3 --max-nodes=10 \
+  --no-issue-client-certificate --num-nodes=3 --image-type=cos \
+  --enable-stackdriver-kubernetes \
+  --scopes=cloud-platform,logging-write,monitoring-write,pubsub \
+  --zone ${CLUSTER_ZONE} \
+  --release-channel=rapid
+```
+
+## Setup Cloud Run Events
+
+Setup Cloud Run Events (Control Plane).
+
+```sh
+gcloud beta events init
+```
+
+If everything is setup correctly, you should see pods running in
+`cloud-run-events` and `knative-eventing` namespaces:
+
+```bash
+kubectl get pods -n cloud-run-events
+kubectl get pods -n knative-eventing
+```
+
+Setup Cloud Run Events (Data Plane) with the default namespace.
+
+```sh
+export NAMESPACE=default
+gcloud beta events namespaces init ${NAMESPACE} --copy-default-secret
+```
+
+Create a Broker in the namespace:
+
+```sh
+gcloud beta events brokers create default --namespace ${NAMESPACE}
+```
+
+Check that the broker is created:
+
+```sh
+kubectl get broker -n ${NAMESPACE}
 ```
 
 ## Create a storage bucket
@@ -96,7 +129,7 @@ gcloud run deploy ${SERVICE_NAME} \
 
 The service will be triggered with Cloud Scheduler. More specifically, we will
 create two triggers for two countries (United Kingdom and Cyprus) and Cloud
-Scheduler will emit `com.google.cloud.scheduler.job.execute` events once a day
+Scheduler will emit `google.cloud.scheduler.job.v1.executed` events once a day
 for each country which in turn will call the service.
 
 Set an environment variable for scheduler location, ideally in the same region
@@ -108,24 +141,24 @@ export SCHEDULER_LOCATION=europe-west1
 
 Create the trigger for UK:
 
-```bash
-gcloud alpha events triggers create trigger-${SERVICE_NAME}-uk \
---target-service=${SERVICE_NAME} \
---type=com.google.cloud.scheduler.job.execute \
---parameters location=${SCHEDULER_LOCATION} \
---parameters schedule="0 16 * * *" \
---parameters data="United Kingdom"
+```sh
+gcloud beta events triggers create trigger-${SERVICE_NAME}-uk \
+  --target-service=${SERVICE_NAME} \
+  --type=google.cloud.scheduler.job.v1.executed \
+  --parameters location=${SCHEDULER_LOCATION} \
+  --parameters schedule="0 16 * * *" \
+  --parameters data="United Kingdom"
 ```
 
 Create the trigger for Cyprus:
 
-```bash
-gcloud alpha events triggers create trigger-${SERVICE_NAME}-cy \
---target-service=${SERVICE_NAME} \
---type=com.google.cloud.scheduler.job.execute \
---parameters location=${SCHEDULER_LOCATION} \
---parameters schedule="0 17 * * *" \
---parameters data="Cyprus"
+```sh
+gcloud beta events triggers create trigger-${SERVICE_NAME}-cy \
+  --target-service=${SERVICE_NAME} \
+  --type=google.cloud.scheduler.job.v1.executed \
+  --parameters location=${SCHEDULER_LOCATION} \
+  --parameters schedule="0 17 * * *" \
+  --parameters data="Cyprus"
 ```
 
 ## Chart Creator
@@ -165,11 +198,11 @@ types which is the custom event type emitted by the query service.
 
 Create the trigger:
 
-```bash
-gcloud alpha events triggers create trigger-${SERVICE_NAME} \
---target-service=${SERVICE_NAME} \
---type=dev.knative.samples.querycompleted \
---custom-type
+```sh
+gcloud beta events triggers create trigger-${SERVICE_NAME} \
+  --target-service ${SERVICE_NAME} \
+  --type=dev.knative.samples.querycompleted \
+  --custom-type
 ```
 
 ## Notifier
@@ -209,17 +242,17 @@ gcloud run deploy ${SERVICE_NAME} \
 
 ### Trigger
 
-The trigger of the service filters on `com.google.cloud.storage.object.finalize` event
+The trigger of the service filters on `google.cloud.storage.object.v1.finalized` event
 which is the event type emitted by the Cloud Storage when a file is saved to the
 bucket.
 
 Create the trigger:
 
-```bash
-gcloud alpha events triggers create trigger-${SERVICE_NAME} \
---target-service=${SERVICE_NAME} \
---type=com.google.cloud.storage.object.finalize \
---parameters bucket=${BUCKET}
+```sh
+gcloud beta events triggers create trigger-${SERVICE_NAME} \
+  --target-service ${SERVICE_NAME} \
+  --type=google.cloud.storage.object.v1.finalized \
+  --parameters bucket=${BUCKET}
 ```
 
 ## Test the pipeline
@@ -227,13 +260,13 @@ gcloud alpha events triggers create trigger-${SERVICE_NAME} \
 Before testing the pipeline, make sure all the triggers are ready:
 
 ```bash
-gcloud alpha events triggers list
+gcloud beta events triggers list
 
    TRIGGER                  EVENT TYPE                                TARGET
 ✔  trigger-chart-creator    dev.knative.samples.querycompleted        chart-creator
-✔  trigger-notifier         com.google.cloud.storage.object.finalize  notifier
-✔  trigger-query-runner-cy  com.google.cloud.scheduler.job.execute    query-runner
-✔  trigger-query-runner-uk  com.google.cloud.scheduler.job.execute    query-runner
+✔  trigger-notifier         google.cloud.storage.object.v1.finalized  notifier
+✔  trigger-query-runner-cy  google.cloud.scheduler.job.v1.executed    query-runner
+✔  trigger-query-runner-uk  google.cloud.scheduler.job.v1.executed    query-runner
 ```
 
 You can wait for Cloud Scheduler to trigger the services or you can manually
