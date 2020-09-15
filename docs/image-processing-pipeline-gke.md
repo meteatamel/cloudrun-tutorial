@@ -20,30 +20,11 @@ Storage events to various services with **Events with Cloud Run on GKE**.
 6. Labeler receives the `fileuploaded` event, extracts labels of the image with
    Vision API and saves the labels to the output bucket.
 
-## Prerequisites
+## Set zone and platform
 
-Events for Cloud Run is currently private alpha. We're assuming that you already
-have your project white listed
-[here](https://sites.google.com/corp/view/eventsforcloudrun), read the [Complete
-User
-Guide](https://docs.google.com/document/d/16UHFfDQJlpFb1WsrPZ-DYEP8_HcLbbRPK1ScACXct6U/edit)
-for `Events for Cloud Run - GKE` and setup a GKE cluster with Cloud Run Events
-installed as described in the guide.
+Set some variables to hold your cluster name and zone. For example:
 
-If everything is setup correctly, you should see pods running in
-`cloud-run-events` and `knative-eventing` namespaces and a `Broker` in the
-default namespace:
-
-```bash
-kubectl get pods -n cloud-run-events
-kubectl get pods -n knative-eventing
-kubectl get broker
-```
-
-You should also set some variables to hold your cluster name and zone. For
-example:
-
-```bash
+```sh
 export CLUSTER_NAME=events-cluster
 export CLUSTER_ZONE=europe-west1-b
 
@@ -52,26 +33,75 @@ gcloud config set run/cluster_location ${CLUSTER_ZONE}
 gcloud config set run/platform gke
 ```
 
+## Create a GKE cluster with Cloud Run Events
+
+Create a GKE cluster with the following addons enabled: CloudRun,
+HttpLoadBalancing, HorizontalPodAutoscaling:
+
+```sh
+gcloud beta container clusters create ${CLUSTER_NAME} \
+  --addons=HttpLoadBalancing,HorizontalPodAutoscaling,CloudRun \
+  --machine-type=n1-standard-4 \
+  --enable-autoscaling --min-nodes=3 --max-nodes=10 \
+  --no-issue-client-certificate --num-nodes=3 --image-type=cos \
+  --enable-stackdriver-kubernetes \
+  --scopes=cloud-platform,logging-write,monitoring-write,pubsub \
+  --zone ${CLUSTER_ZONE} \
+  --release-channel=rapid
+```
+
+## Setup Cloud Run Events
+
+Setup Cloud Run Events (Control Plane).
+
+```sh
+gcloud beta events init
+```
+
+If everything is setup correctly, you should see pods running in
+`cloud-run-events` and `knative-eventing` namespaces:
+
+```sh
+kubectl get pods -n cloud-run-events
+kubectl get pods -n knative-eventing
+```
+
+Setup Cloud Run Events (Data Plane) with the default namespace.
+
+```sh
+export NAMESPACE=default
+gcloud beta events namespaces init ${NAMESPACE} --copy-default-secret
+```
+
+Create a Broker in the namespace:
+
+```sh
+gcloud beta events brokers create default --namespace ${NAMESPACE}
+```
+
+Check that the broker is created:
+
+```sh
+kubectl get broker -n ${NAMESPACE}
+```
+
 ## Create storage buckets
 
 Create 2 unique storage buckets to save pre and post processed images:
 
-```bash
+```sh
 export BUCKET1="$(gcloud config get-value core/project)-images-input-gke"
 export BUCKET2="$(gcloud config get-value core/project)-images-output-gke"
-gsutil mb -p $(gcloud config get-value project) \
-   -l $(gcloud config get-value run/region) \
-   gs://${BUCKET1}
-gsutil mb -p $(gcloud config get-value project) \
-   -l $(gcloud config get-value run/region) \
-   gs://${BUCKET2}
+export BUCKET_LOCATION=europe-west1
+gsutil mb -l ${BUCKET_LOCATION} gs://${BUCKET1}
+gsutil mb -l ${BUCKET_LOCATION} gs://${BUCKET2}
 ```
 
 ## Enable Vision API
 
 Some services use Vision API. Make sure the Vision API is enabled:
 
-```bash
+```sh
 gcloud services enable vision.googleapis.com
 ```
 
@@ -90,7 +120,7 @@ Inside the top level
 [processing-pipelines](https://github.com/meteatamel/knative-tutorial/tree/master/eventing/processing-pipelines)
 folder, build and push the container image:
 
-```bash
+```sh
 export SERVICE_NAME=filter
 docker build -t gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 -f image/${SERVICE_NAME}/csharp/Dockerfile .
 docker push gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1
@@ -98,7 +128,7 @@ docker push gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1
 
 Deploy the service:
 
-```bash
+```sh
 gcloud run deploy ${SERVICE_NAME} \
   --image gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1
 ```
@@ -106,15 +136,15 @@ gcloud run deploy ${SERVICE_NAME} \
 ### Trigger
 
 The trigger of the service filters on Cloud Storage finalize events:
-`com.google.cloud.storage.object.finalize`.
+`google.cloud.storage.object.v1.finalized`.
 
 Create the trigger:
 
-```bash
-gcloud alpha events triggers create trigger-${SERVICE_NAME} \
---target-service=${SERVICE_NAME} \
---type=com.google.cloud.storage.object.finalize \
---parameters bucket=${BUCKET1}
+```sh
+gcloud beta events triggers create trigger-${SERVICE_NAME} \
+  --target-service ${SERVICE_NAME} \
+  --type=google.cloud.storage.object.v1.finalized \
+  --parameters bucket=${BUCKET1}
 ```
 
 ## Resizer
@@ -132,7 +162,7 @@ Inside the top level
 [processing-pipelines](.https://github.com/meteatamel/knative-tutorial/tree/master/eventing/processing-pipelines)
 folder, build and push the container image:
 
-```bash
+```sh
 export SERVICE_NAME=resizer
 docker build -t gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 -f image/${SERVICE_NAME}/csharp/Dockerfile .
 docker push gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1
@@ -140,7 +170,7 @@ docker push gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1
 
 Deploy the service:
 
-```bash
+```sh
 gcloud run deploy ${SERVICE_NAME} \
   --image gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 \
   --update-env-vars BUCKET=${BUCKET2}
@@ -153,11 +183,11 @@ types which is the custom event type emitted by the filter service.
 
 Create the trigger:
 
-```bash
-gcloud alpha events triggers create trigger-${SERVICE_NAME} \
---target-service ${SERVICE_NAME} \
---type=dev.knative.samples.fileuploaded \
---custom-type
+```sh
+gcloud beta events triggers create trigger-${SERVICE_NAME} \
+  --target-service ${SERVICE_NAME} \
+  --type=dev.knative.samples.fileuploaded \
+  --custom-type
 ```
 
 ## Watermark
@@ -175,7 +205,7 @@ Inside the top level
 [processing-pipelines](.https://github.com/meteatamel/knative-tutorial/tree/master/eventing/processing-pipelines)
 folder, build and push the container image:
 
-```bash
+```sh
 export SERVICE_NAME=watermarker
 docker build -t gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 -f image/${SERVICE_NAME}/csharp/Dockerfile .
 docker push gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1
@@ -183,7 +213,7 @@ docker push gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1
 
 Deploy the service:
 
-```bash
+```sh
 gcloud run deploy ${SERVICE_NAME} \
   --image gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 \
   --update-env-vars BUCKET=${BUCKET2}
@@ -196,11 +226,11 @@ types which is the custom event type emitted by the resizer service.
 
 Create the trigger:
 
-```bash
-gcloud alpha events triggers create trigger-${SERVICE_NAME} \
---target-service=${SERVICE_NAME} \
---type=dev.knative.samples.fileresized \
---custom-type
+```sh
+gcloud beta events triggers create trigger-${SERVICE_NAME} \
+  --target-service=${SERVICE_NAME} \
+  --type=dev.knative.samples.fileresized \
+  --custom-type
 ```
 
 ## Labeler
@@ -217,7 +247,7 @@ Inside the top level
 [processing-pipelines](.https://github.com/meteatamel/knative-tutorial/tree/master/eventing/processing-pipelines)
 folder, build and push the container image:
 
-```bash
+```sh
 export SERVICE_NAME=labeler
 docker build -t gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 -f image/${SERVICE_NAME}/csharp/Dockerfile .
 docker push gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1
@@ -225,7 +255,7 @@ docker push gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1
 
 Deploy the service:
 
-```bash
+```sh
 gcloud run deploy ${SERVICE_NAME} \
   --image gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 \
   --update-env-vars BUCKET=${BUCKET2}
@@ -238,22 +268,22 @@ types which is the custom event type emitted by the filter service.
 
 Create the trigger:
 
-```bash
-gcloud alpha events triggers create trigger-${SERVICE_NAME} \
---target-service ${SERVICE_NAME} \
---type=dev.knative.samples.fileuploaded \
---custom-type
+```sh
+gcloud beta events triggers create trigger-${SERVICE_NAME} \
+  --target-service ${SERVICE_NAME} \
+  --type=dev.knative.samples.fileuploaded \
+  --custom-type
 ```
 
 ## Test the pipeline
 
 Before testing the pipeline, make sure all the triggers are ready:
 
-```bash
-gcloud alpha events triggers list
+```sh
+gcloud beta events triggers list
 
    TRIGGER              EVENT TYPE                                TARGET
-✔  trigger-filter       com.google.cloud.storage.object.finalize  filter
+✔  trigger-filter       google.cloud.storage.object.v1.finalized  filter
 ✔  trigger-labeler      dev.knative.samples.fileuploaded          labeler
 ✔  trigger-resizer      dev.knative.samples.fileuploaded          resizer
 ✔  trigger-watermarker  dev.knative.samples.fileresized           watermarker
@@ -261,14 +291,14 @@ gcloud alpha events triggers list
 
 You can upload an image to the input storage bucket:
 
-```bash
+```sh
 gsutil cp ../pictures/beach.jpg gs://${BUCKET1}
 ```
 
 After a minute or so, you should see resized, watermarked and labelled image in
 the output bucket:
 
-```bash
+```sh
 gsutil ls gs://${BUCKET2}
 
 gs://events-atamel-images-output/beach-400x400-watermark.jpeg

@@ -22,7 +22,7 @@ the new charts via SendGrid with **Events with Cloud Run on GKE**.
 
 Set some variables to hold your cluster name and zone. For example:
 
-```bash
+```sh
 export CLUSTER_NAME=events-cluster
 export CLUSTER_ZONE=europe-west1-b
 
@@ -59,7 +59,7 @@ gcloud beta events init
 If everything is setup correctly, you should see pods running in
 `cloud-run-events` and `knative-eventing` namespaces:
 
-```bash
+```sh
 kubectl get pods -n cloud-run-events
 kubectl get pods -n knative-eventing
 ```
@@ -88,7 +88,7 @@ kubectl get broker -n ${NAMESPACE}
 Create a unique storage bucket to save the charts and make sure the bucket and
 the charts in the bucket are all public:
 
-```bash
+```sh
 export BUCKET="$(gcloud config get-value core/project)-charts-gke"
 gsutil mb gs://${BUCKET}
 gsutil uniformbucketlevelaccess set on gs://${BUCKET}
@@ -110,7 +110,7 @@ Inside the top level
 [processing-pipelines](.https://github.com/meteatamel/knative-tutorial/tree/master/eventing/processing-pipelines)
 folder, build and push the container image:
 
-```bash
+```sh
 export SERVICE_NAME=query-runner
 docker build -t gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 -f bigquery/${SERVICE_NAME}/csharp/Dockerfile .
 docker push gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1
@@ -119,7 +119,7 @@ docker push gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1
 Deploy the service while passing in `PROJECT_ID` with your actual project id.
 This is needed for the BigQuery client:
 
-```bash
+```sh
 gcloud run deploy ${SERVICE_NAME} \
   --image gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 \
   --update-env-vars PROJECT_ID=$(gcloud config get-value project)
@@ -135,7 +135,7 @@ for each country which in turn will call the service.
 Set an environment variable for scheduler location, ideally in the same region
 as your Cloud Run service. For example:
 
-```bash
+```sh
 export SCHEDULER_LOCATION=europe-west1
 ```
 
@@ -177,7 +177,7 @@ Inside the
 [chart-creator/python](../eventing/processing-pipelines/bigquery/chart-creator/python)
 folder, build and push the container image:
 
-```bash
+```sh
 export SERVICE_NAME=chart-creator
 docker build -t gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 .
 docker push gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1
@@ -185,7 +185,7 @@ docker push gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1
 
 Deploy the service while passing in `BUCKET` with the bucket you created earlier.
 
-```bash
+```sh
 gcloud run deploy ${SERVICE_NAME} \
   --image gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 \
   --update-env-vars BUCKET=${BUCKET}
@@ -223,7 +223,7 @@ Inside the
 [notifier/python](../eventing/processing-pipelines/bigquery/notifier/python)
 folder, build and push the container image:
 
-```bash
+```sh
 export SERVICE_NAME=notifier
 docker build -t gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 .
 docker push gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1
@@ -232,7 +232,7 @@ docker push gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1
 Deploy the service while passing in `TO_EMAILS` to email address where you want
 to send the notification and `SENDGRID_API_KEY` with your send SendGrid API Key.
 
-```bash
+```sh
 export TO_EMAILS=youremail@gmail.com
 export SENDGRID_API_KEY=yoursendgridapikey
 gcloud run deploy ${SERVICE_NAME} \
@@ -259,7 +259,7 @@ gcloud beta events triggers create trigger-${SERVICE_NAME} \
 
 Before testing the pipeline, make sure all the triggers are ready:
 
-```bash
+```sh
 gcloud beta events triggers list
 
    TRIGGER                  EVENT TYPE                                TARGET
@@ -274,7 +274,7 @@ trigger the jobs.
 
 Find the jobs IDs:
 
-```bash
+```sh
 gcloud scheduler jobs list
 
 ID                                                  LOCATION      SCHEDULE (TZ)          TARGET_TYPE  STATE
@@ -284,14 +284,14 @@ cre-scheduler-714c0b82-c441-42f4-8f99-0e2eac9a5869  europe-west1  0 17 * * * (UT
 
 Trigger the jobs manually:
 
-```bash
+```sh
 gcloud scheduler jobs run cre-scheduler-2bcb33d8-3165-4eca-9428-feb99bc320e2
 gcloud scheduler jobs run cre-scheduler-714c0b82-c441-42f4-8f99-0e2eac9a5869
 ```
 
 After a minute or so, you should see 2 charts in the bucket:
 
-```bash
+```sh
 gsutil ls gs://${BUCKET}
 
 gs://events-atamel-charts/chart-cyprus.png
