@@ -18,9 +18,9 @@ the new charts via SendGrid with **Events with Cloud Run on GKE**.
    the bucket via a `CloudStorageSource` and sends an email notification to
    users using SendGrid.
 
-## Set zone and platform
+## Set variables
 
-Set some variables to hold your cluster name and zone. For example:
+Set cluster name, zone and platform:
 
 ```sh
 export CLUSTER_NAME=events-cluster
