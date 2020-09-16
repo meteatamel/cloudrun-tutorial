@@ -21,23 +21,16 @@ Storage events to various services with **Events with Cloud Run (Managed)**.
 6. Labeler receives the event from `fileuploaded` topic, extracts labels of the
    image with Vision API and saves the labels to the output bucket.
 
-## Prerequisites
+## Set variables
 
-Events for Cloud Run is currently private alpha. We're assuming that you already
-have your project white listed
-[here](https://sites.google.com/corp/view/eventsforcloudrun), read the [Complete
-User
-Guide](https://drive.google.com/open?authuser=0&id=1cgvoMFzcVru_GbzNbZzxKCrKhw4ZJn4xdj2F0Q9pNx8)
-for `Events for Cloud Run`.
+Set region, location and platform:
 
-You should also set some variables to hold your region and zone. For
-example:
-
-```bash
+```sh
 export REGION=europe-west1
 
 gcloud config set run/region ${REGION}
 gcloud config set run/platform managed
+gcloud config set eventarc/location ${REGION}
 ```
 
 ## Create storage buckets
@@ -45,34 +38,156 @@ gcloud config set run/platform managed
 Create 2 unique storage buckets to save pre and post processed images. Make sure
 the bucket is in the same region as your Cloud Run service:
 
-```bash
+```sh
 export BUCKET1="$(gcloud config get-value core/project)-images-input"
 export BUCKET2="$(gcloud config get-value core/project)-images-output"
-gsutil mb -p $(gcloud config get-value project) \
-   -l $(gcloud config get-value run/region) \
-   gs://${BUCKET1}
-gsutil mb -p $(gcloud config get-value project) \
-   -l $(gcloud config get-value run/region) \
-   gs://${BUCKET2}
-```
-
-## Create Pub/Sub topics
-
-Create 2 Pub/Sub topics for intra-service communication:
-
-```bash
-export TOPIC1=fileuploaded
-export TOPIC2=fileresized
-gcloud pubsub topics create ${TOPIC1}
-gcloud pubsub topics create ${TOPIC2}
+gsutil mb -l $(gcloud config get-value run/region) gs://${BUCKET1}
+gsutil mb -l $(gcloud config get-value run/region) gs://${BUCKET2}
 ```
 
 ## Enable Vision API
 
 Some services use Vision API. Make sure the Vision API is enabled:
 
-```bash
+```sh
 gcloud services enable vision.googleapis.com
+```
+
+## Watermark
+
+This service receives the event, adds the watermark to the image using
+[ImageSharp](https://github.com/SixLabors/ImageSharp) library and saves the
+image to the output bucket.
+
+### Service
+
+The code of the service is in [watermarker](https://github.com/meteatamel/knative-tutorial/tree/master/eventing/processing-pipelines/image/watermarker)
+folder.
+
+Inside the top level
+[processing-pipelines](.https://github.com/meteatamel/knative-tutorial/tree/master/eventing/processing-pipelines)
+folder, build and push the container image:
+
+```sh
+export SERVICE_NAME=watermarker
+docker build -t gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 -f image/${SERVICE_NAME}/csharp/Dockerfile .
+docker push gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1
+```
+
+Deploy the service:
+
+```sh
+gcloud run deploy ${SERVICE_NAME} \
+  --image gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 \
+  --update-env-vars BUCKET=${BUCKET2} \
+  --allow-unauthenticated
+```
+
+### Trigger
+
+Create a Pub/Sub trigger:
+
+```sh
+gcloud beta eventarc triggers create trigger-${SERVICE_NAME} \
+  --destination-run-service=${SERVICE_NAME} \
+  --matching-criteria="type=google.cloud.pubsub.topic.v1.messagePublished"
+```
+
+Set the Pub/Sub topic in an env variable that we'll need later:
+
+```sh
+export TOPIC_FILE_RESIZED=$(basename $(gcloud beta eventarc triggers describe trigger-${SERVICE_NAME} --format='value(transport.pubsub.topic)'))
+```
+
+## Resizer
+
+This service receives the event from `fileuploaded` topic, resizes the image using
+[ImageSharp](https://github.com/SixLabors/ImageSharp) library and passes the
+event onwards.
+
+### Service
+
+The code of the service is in [resizer](https://github.com/meteatamel/knative-tutorial/tree/master/eventing/processing-pipelines/image/resizer)
+folder.
+
+Inside the top level
+[processing-pipelines](.https://github.com/meteatamel/knative-tutorial/tree/master/eventing/processing-pipelines)
+folder, build and push the container image:
+
+```sh
+export SERVICE_NAME=resizer
+docker build -t gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 -f image/${SERVICE_NAME}/csharp/Dockerfile .
+docker push gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1
+```
+
+Deploy the service:
+
+```sh
+gcloud run deploy ${SERVICE_NAME} \
+  --image gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 \
+  --update-env-vars BUCKET=${BUCKET2},TOPIC_ID=${TOPIC_FILE_RESIZED},PROJECT_ID=$(gcloud config get-value project) \
+  --allow-unauthenticated
+```
+
+### Trigger
+
+Create a Pub/Sub trigger:
+
+```sh
+gcloud beta eventarc triggers create trigger-${SERVICE_NAME} \
+  --destination-run-service=${SERVICE_NAME} \
+  --matching-criteria="type=google.cloud.pubsub.topic.v1.messagePublished"
+```
+
+Set the Pub/Sub topic in an env variable that we'll need later:
+
+```sh
+export TOPIC_FILE_UPLOADED1=$(basename $(gcloud beta eventarc triggers describe trigger-${SERVICE_NAME} --format='value(transport.pubsub.topic)'))
+```
+
+## Labeler
+
+Labeler receives the event, extracts labels of the image with Vision API and
+saves the labels to the output bucket.
+
+### Service
+
+The code of the service is in [labeler](https://github.com/meteatamel/knative-tutorial/tree/master/eventing/processing-pipelines/image/labeler)
+folder.
+
+Inside the top level
+[processing-pipelines](.https://github.com/meteatamel/knative-tutorial/tree/master/eventing/processing-pipelines)
+folder, build and push the container image:
+
+```sh
+export SERVICE_NAME=labeler
+docker build -t gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 -f image/${SERVICE_NAME}/csharp/Dockerfile .
+docker push gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1
+```
+
+Deploy the service:
+
+```sh
+gcloud run deploy ${SERVICE_NAME} \
+  --image gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 \
+  --update-env-vars BUCKET=${BUCKET2} \
+  --allow-unauthenticated
+```
+
+### Trigger
+
+Create a Pub/Sub trigger:
+
+```sh
+gcloud beta eventarc triggers create trigger-${SERVICE_NAME} \
+  --destination-run-service=${SERVICE_NAME} \
+  --matching-criteria="type=google.cloud.pubsub.topic.v1.messagePublished"
+```
+
+Set the Pub/Sub topic in an env variable that we'll need later:
+
+```sh
+export TOPIC_FILE_UPLOADED2=$(basename $(gcloud beta eventarc triggers describe trigger-${SERVICE_NAME} --format='value(transport.pubsub.topic)'))
 ```
 
 ## Filter
@@ -91,7 +206,7 @@ Inside the top level
 folder, build and push the container image:
 image:
 
-```bash
+```sh
 export SERVICE_NAME=filter
 docker build -t gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 -f image/${SERVICE_NAME}/csharp/Dockerfile .
 docker push gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1
@@ -99,10 +214,10 @@ docker push gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1
 
 Deploy the service:
 
-```bash
+```sh
 gcloud run deploy ${SERVICE_NAME} \
   --image gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 \
-  --update-env-vars BUCKET=${BUCKET1},TOPIC_ID=${TOPIC1},PROJECT_ID=$(gcloud config get-value project) \
+  --update-env-vars BUCKET=${BUCKET1},TOPIC_ID=${TOPIC_FILE_UPLOADED1}:${TOPIC_FILE_UPLOADED2},PROJECT_ID=$(gcloud config get-value project) \
   --allow-unauthenticated
 ```
 
@@ -113,165 +228,38 @@ The trigger of the service filters on Audit Logs for Cloud Storage events with
 
 Create the trigger:
 
-```bash
-gcloud alpha events triggers create trigger-${SERVICE_NAME} \
---target-service=${SERVICE_NAME} \
---type com.google.cloud.auditlog.event \
---parameters serviceName=storage.googleapis.com \
---parameters methodName=storage.objects.create
-```
-
-## Resizer
-
-This service receives the event from `fileuploaded` topic, resizes the image using
-[ImageSharp](https://github.com/SixLabors/ImageSharp) library and passes the
-event onwards.
-
-### Service
-
-The code of the service is in [resizer](https://github.com/meteatamel/knative-tutorial/tree/master/eventing/processing-pipelines/image/resizer)
-folder.
-
-Inside the top level
-[processing-pipelines](.https://github.com/meteatamel/knative-tutorial/tree/master/eventing/processing-pipelines)
-folder, build and push the container image:
-
-```bash
-export SERVICE_NAME=resizer
-docker build -t gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 -f image/${SERVICE_NAME}/csharp/Dockerfile .
-docker push gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1
-```
-
-Deploy the service:
-
-```bash
-gcloud run deploy ${SERVICE_NAME} \
-  --image gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 \
-  --update-env-vars BUCKET=${BUCKET2},TOPIC_ID=${TOPIC2},PROJECT_ID=$(gcloud config get-value project) \
-  --allow-unauthenticated
-```
-
-### Trigger
-
-The trigger of the service filters on `fileuploaded` Pub/Sub topic.
-
-Create the trigger:
-
-```bash
-gcloud alpha events triggers create trigger-${SERVICE_NAME} \
---target-service ${SERVICE_NAME} \
---type com.google.cloud.pubsub.topic.publish \
---parameters topic=${TOPIC1}
-```
-
-## Watermark
-
-This service receives the event, adds the watermark to the image using
-[ImageSharp](https://github.com/SixLabors/ImageSharp) library and saves the
-image to the output bucket.
-
-### Service
-
-The code of the service is in [watermarker](https://github.com/meteatamel/knative-tutorial/tree/master/eventing/processing-pipelines/image/watermarker)
-folder.
-
-Inside the top level
-[processing-pipelines](.https://github.com/meteatamel/knative-tutorial/tree/master/eventing/processing-pipelines)
-folder, build and push the container image:
-
-```bash
-export SERVICE_NAME=watermarker
-docker build -t gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 -f image/${SERVICE_NAME}/csharp/Dockerfile .
-docker push gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1
-```
-
-Deploy the service:
-
-```bash
-gcloud run deploy ${SERVICE_NAME} \
-  --image gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 \
-  --update-env-vars BUCKET=${BUCKET2} \
-  --allow-unauthenticated
-```
-
-### Trigger
-
-The trigger of the service filters on `fileresized` Pub/Sub topic.
-
-Create the trigger:
-
-```bash
-gcloud alpha events triggers create trigger-${SERVICE_NAME} \
---target-service ${SERVICE_NAME} \
---type com.google.cloud.pubsub.topic.publish \
---parameters topic=${TOPIC2}
-```
-
-## Labeler
-
-Labeler receives the event, extracts labels of the image with Vision API and
-saves the labels to the output bucket.
-
-### Service
-
-The code of the service is in [labeler](https://github.com/meteatamel/knative-tutorial/tree/master/eventing/processing-pipelines/image/labeler)
-folder.
-
-Inside the top level
-[processing-pipelines](.https://github.com/meteatamel/knative-tutorial/tree/master/eventing/processing-pipelines)
-folder, build and push the container image:
-
-```bash
-export SERVICE_NAME=labeler
-docker build -t gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 -f image/${SERVICE_NAME}/csharp/Dockerfile .
-docker push gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1
-```
-
-Deploy the service:
-
-```bash
-gcloud run deploy ${SERVICE_NAME} \
-  --image gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 \
-  --update-env-vars BUCKET=${BUCKET2} \
-  --allow-unauthenticated
-```
-
-### Trigger
-
-The trigger of the service filters on `fileuploaded` Pub/Sub topic.
-
-Create the trigger:
-
-```bash
-gcloud alpha events triggers create trigger-${SERVICE_NAME} \
---target-service ${SERVICE_NAME} \
---type com.google.cloud.pubsub.topic.publish \
---parameters topic=${TOPIC1}
+```sh
+gcloud beta eventarc triggers create trigger-${SERVICE_NAME} \
+  --destination-run-service=${SERVICE_NAME} \
+  --matching-criteria="type=google.cloud.audit.log.v1.written" \
+  --matching-criteria="serviceName=storage.googleapis.com" \
+  --matching-criteria="methodName=storage.objects.create"
 ```
 
 ## Test the pipeline
 
 Before testing the pipeline, make sure all the triggers are ready:
 
-```bash
-gcloud alpha events triggers list
+```sh
+gcloud beta eventarc triggers list
 
-✔  trigger-filter         com.google.cloud.auditlog.event        filter
-✔  trigger-labeler        com.google.cloud.pubsub.topic.publish  labeler
-✔  trigger-resizer        com.google.cloud.pubsub.topic.publish  resizer
-✔  trigger-watermarker    com.google.cloud.pubsub.topic.publish  watermarker
+NAME                 DESTINATION_RUN_SERVICE  DESTINATION_RUN_PATH
+trigger-filter       filter
+trigger-resizer      resizer
+trigger-watermarker  watermarker
+trigger-labeler      labeler
 ```
 
 You can upload an image to the input storage bucket:
 
-```bash
+```sh
 gsutil cp ../pictures/beach.jpg gs://${BUCKET1}
 ```
 
 After a minute or so, you should see resized, watermarked and labelled image in
 the output bucket:
 
-```bash
+```sh
 gsutil ls gs://${BUCKET2}
 
 gs://events-atamel-images-output/beach-400x400-watermark.jpeg
