@@ -132,6 +132,14 @@ create two triggers for two countries (United Kingdom and Cyprus) and Cloud
 Scheduler will emit `google.cloud.scheduler.job.v1.executed` events once a day
 for each country which in turn will call the service.
 
+Cloud Scheduler currently needs users to create an App Engine application.
+Pick an App Engine Location and create the app:
+
+```sh
+export APP_ENGINE_LOCATION=europe-west
+gcloud app create --region=${APP_ENGINE_LOCATION}
+```
+
 Set an environment variable for scheduler location, ideally in the same region
 as your Cloud Run service. For example:
 

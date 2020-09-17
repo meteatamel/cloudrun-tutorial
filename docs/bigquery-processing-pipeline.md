@@ -194,6 +194,14 @@ create two triggers for two countries (United Kingdom and Cyprus) and Cloud
 Scheduler will emit to `queryscheduled` topic once a day for each country which
 in turn will call the service.
 
+Cloud Scheduler currently needs users to create an App Engine application.
+Pick an App Engine Location and create the app:
+
+```sh
+export APP_ENGINE_LOCATION=europe-west
+gcloud app create --region=${APP_ENGINE_LOCATION}
+```
+
 Create the scheduler job for UK:
 
 ```sh
