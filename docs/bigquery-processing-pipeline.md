@@ -42,6 +42,22 @@ gsutil uniformbucketlevelaccess set on gs://${BUCKET}
 gsutil iam ch allUsers:objectViewer gs://${BUCKET}
 ```
 
+## Setup Cloud Storage for events
+
+Retrieve the Cloud Storage service account:
+
+```sh
+export GCS_SERVICE_ACCOUNT=$(curl -s -X GET -H "Authorization: Bearer $(gcloud auth print-access-token)" "https://storage.googleapis.com/storage/v1/projects/$(gcloud config get-value project)/serviceAccount" | jq --raw-output '.email_address')
+```
+
+Give the Cloud Storage service account publish rights to Pub/Sub:
+
+```sh
+gcloud projects add-iam-policy-binding $(gcloud config get-value project) \
+    --member=serviceAccount:${GCS_SERVICE_ACCOUNT} \
+    --role roles/pubsub.publisher
+```
+
 ## Notifier
 
 This service receives the Cloud Storage events and uses SendGrid to send an
