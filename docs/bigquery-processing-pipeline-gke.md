@@ -123,7 +123,7 @@ The code of the service is in [query-runner](https://github.com/meteatamel/knati
 folder.
 
 Inside the top level
-[processing-pipelines](.https://github.com/meteatamel/knative-tutorial/tree/master/eventing/processing-pipelines)
+[processing-pipelines](https://github.com/meteatamel/knative-tutorial/tree/master/eventing/processing-pipelines)
 folder, build and push the container image:
 
 ```sh
@@ -198,7 +198,7 @@ The code of the service is in [chart-creator](https://github.com/meteatamel/knat
 folder.
 
 Inside the
-[chart-creator/python](../eventing/processing-pipelines/bigquery/chart-creator/python)
+[chart-creator/python](https://github.com/meteatamel/knative-tutorial/tree/master/eventing/processing-pipelines/bigquery/chart-creator/python)
 folder, build and push the container image:
 
 ```sh
@@ -244,7 +244,7 @@ The code of the service is in
 folder.
 
 Inside the
-[notifier/python](../eventing/processing-pipelines/bigquery/notifier/python)
+[notifier/python](https://github.com/meteatamel/knative-tutorial/tree/master/eventing/processing-pipelines/bigquery/notifier/python)
 folder, build and push the container image:
 
 ```sh

@@ -69,11 +69,11 @@ for more details on how to setup SendGrid.
 ### Service
 
 The code of the service is in
-[notifier](https://github.com/meteatamel/knative-tutorial/tree/master/eventing/bigquery-processing-pipeline/notifier)
+[notifier](https://github.com/meteatamel/knative-tutorial/tree/master/eventing/processing-pipelines/bigquery/notifier)
 folder.
 
 Inside the
-[notifier/python](../eventing/processing-pipelines/bigquery/notifier/python)
+[notifier/python](https://github.com/meteatamel/knative-tutorial/tree/master/eventing/processing-pipelines/bigquery/notifier/python)
 folder, build and push the container image:
 
 ```sh
@@ -118,11 +118,11 @@ Cloud Storage.
 
 ### Service
 
-The code of the service is in [chart-creator](https://github.com/meteatamel/knative-tutorial/tree/master/eventing/bigquery-processing-pipeline/chart-creator)
+The code of the service is in [chart-creator](https://github.com/meteatamel/knative-tutorial/tree/master/eventing/processing-pipelines/bigquery/chart-creator)
 folder.
 
 Inside the
-[chart-creator/python](../eventing/processing-pipelines/bigquery/chart-creator/python)
+[chart-creator/python](https://github.com/meteatamel/knative-tutorial/tree/master/eventing/processing-pipelines/bigquery/chart-creator/python)
 folder, build and push the container image:
 
 ```sh
@@ -168,7 +168,7 @@ The code of the service is in [query-runner](https://github.com/meteatamel/knati
 folder.
 
 Inside the top level
-[processing-pipelines](.https://github.com/meteatamel/knative-tutorial/tree/master/eventing/processing-pipelines)
+[processing-pipelines](https://github.com/meteatamel/knative-tutorial/tree/master/eventing/processing-pipelines)
 folder, build and push the container image:
 
 ```sh

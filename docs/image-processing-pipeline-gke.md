@@ -175,7 +175,7 @@ The code of the service is in [resizer](https://github.com/meteatamel/knative-tu
 folder.
 
 Inside the top level
-[processing-pipelines](.https://github.com/meteatamel/knative-tutorial/tree/master/eventing/processing-pipelines)
+[processing-pipelines](https://github.com/meteatamel/knative-tutorial/tree/master/eventing/processing-pipelines)
 folder, build and push the container image:
 
 ```sh
@@ -218,7 +218,7 @@ The code of the service is in [watermarker](https://github.com/meteatamel/knativ
 folder.
 
 Inside the top level
-[processing-pipelines](.https://github.com/meteatamel/knative-tutorial/tree/master/eventing/processing-pipelines)
+[processing-pipelines](https://github.com/meteatamel/knative-tutorial/tree/master/eventing/processing-pipelines)
 folder, build and push the container image:
 
 ```sh
@@ -260,7 +260,7 @@ The code of the service is in [labeler](https://github.com/meteatamel/knative-tu
 folder.
 
 Inside the top level
-[processing-pipelines](.https://github.com/meteatamel/knative-tutorial/tree/master/eventing/processing-pipelines)
+[processing-pipelines](https://github.com/meteatamel/knative-tutorial/tree/master/eventing/processing-pipelines)
 folder, build and push the container image:
 
 ```sh
