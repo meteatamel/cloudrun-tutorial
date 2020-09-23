@@ -9,8 +9,8 @@ Storage events to various services with **Events with Cloud Run (Managed)**.
 2. Cloud Storage update event is read into Cloud Run via an `AuditLog`.
 3. Filter service receives the Cloud Storage event. It uses Vision API to
    determine if the image is safe. If so, it creates sends a Pub/Sub message to
-   `fileuploaded` topic.
-4. Resizer service receives the event from `fileuploaded` topic, resizes the
+   `fileuploaded1` and `fileuploaded2` topics.
+4. Resizer service receives the event from `fileuploaded1` topic, resizes the
    image using [ImageSharp](https://github.com/SixLabors/ImageSharp) library,
    saves to the resized image to the output bucket, sends a Pub/Sub message to
    `fileresized` topic.
@@ -18,7 +18,7 @@ Storage events to various services with **Events with Cloud Run (Managed)**.
    watermark to the image using
    [ImageSharp](https://github.com/SixLabors/ImageSharp) library and saves the
    image to the output bucket.
-6. Labeler receives the event from `fileuploaded` topic, extracts labels of the
+6. Labeler receives the event from `fileuploaded2` topic, extracts labels of the
    image with Vision API and saves the labels to the output bucket.
 
 ## Set variables
@@ -117,7 +117,7 @@ export TOPIC_FILE_RESIZED=$(basename $(gcloud beta eventarc triggers describe tr
 
 ## Resizer
 
-This service receives the event from `fileuploaded` topic, resizes the image using
+This service receives the event, resizes the image using
 [ImageSharp](https://github.com/SixLabors/ImageSharp) library and passes the
 event onwards.
 
