@@ -8,72 +8,65 @@ In this sample, I want to show you how to setup a scheduled Cloud Run service
 that uses [dbt](https://docs.getdbt.com/) with BigQuery backend.
 
 I'm assuming that you already have a Google Cloud project setup with BigQuery
-enabled and you have `gcloud` setup to use that project.
+enabled, you have `gcloud` setup to use that project and you have `dbt`
+installed locally.
 
-## Setup dbt locally with BigQuery
+## Jaffle Shop
 
-First, let's setup dbt locally to talk to BigQuery and then we'll look into how
-to run this on Cloud Run on a schedule.
+For the sample dbt service, we will use
+[jaffle-shop](https://github.com/fishtown-analytics/jaffle_shop). `jaffle_shop`
+is a fictional ecommerce store with the following tables:
 
-Install dbt locally. Since, we'll be talking to BigQuery, we can just
-install the `dbt-bigquery`:
+![Jaffle Shop Tables](https://github.com/fishtown-analytics/jaffle_shop/raw/master/etc/jaffle_shop_erd.png)
 
-```sh
-pip3 install --user --upgrade dbt-bigquery
-```
+There is already a public project `dbt-tutorial` with a `jaffle_shop` dataset
+in BigQuery:
 
-This installs `dbt` under your Python bin directory, eg.
-`/Users/atamel/Library/Python/3.7/bin/dbt`. Add this to your PATH.
+![Jaffle Shop Dataset](./images/jaffleshop-dataset.png)
 
-Create a new dbt project:
+There is also a [tutorial](https://docs.getdbt.com/tutorial/setting-up) in DBT
+documentation showing how to transform this dataset with DBT. We will transform
+this tutorial into a scheduled service.
 
-```sh
-dbt init dbt_project
-```
+## Run dbt locally with BigQuery
 
-By default, dbt looks at `~/.dbt/profiles.yml` for the backend to connect to. To
-configure dbt with BigQuery, you can edit this file or better, create a new
-profile file in the project directory:
+We already setup the sample project in [jaffle-shop](../dbt/jaffle-shop)
+folder. Feel free to explore it in detail. We'll highlight a few things.
 
-```sh
-cd dbt_project
-cat <<EOF > profiles.yml
-default:
-  target: dev
-  outputs:
-    dev:
-      type: bigquery
-      method: oauth
-      project: your-project-id
-      dataset: temp
-EOF
-```
+First, [dbt_project.yml](../dbt/jaffle-shop/dbt_project.yml) file has `jaffle_shop` name and
+profile. It also has a single `jaffle_shop` model materialized as `table`.
 
-This profile uses oauth for authentication to create a temporary BigQuery dataset in your project.
+Second, [profiles.yml](../dbt/jaffle-shop/profiles.yml) defines the BigQuery backend for dbt
+to connect to. This profile uses oauth for authentication to create a BigQuery
+dataset in your project.
+
+Third, [customers.sql](../dbt/jaffle-shop/models/customers.sql) defines the
+model for dbt. It reads from `dbt-tutorial` project's `jaffle_shop` dataset and
+creates a new transformed customers table.
 
 Run dbt with this new profile:
 
 ```sh
 $ dbt run --profiles-dir .
 
-Running with dbt=0.17.0
-Found 2 models, 4 tests, 0 snapshots, 0 analyses, 147 macros, 0 operations, 0 seed files, 0 sources
+Running with dbt=0.17.2
+Found 1 model, 0 tests, 0 snapshots, 0 analyses, 147 macros, 0 operations, 0 seed files, 0 sources
 
-11:48:31 | Concurrency: 1 threads (target='dev')
-11:48:31 |
-11:48:31 | 1 of 2 START table model temp.my_first_dbt_model..................... [RUN]
-11:48:34 | 1 of 2 OK created table model temp.my_first_dbt_model................ [CREATE TABLE (2) in 2.65s]
-11:48:34 | 2 of 2 START view model temp.my_second_dbt_model..................... [RUN]
-11:48:35 | 2 of 2 OK created view model temp.my_second_dbt_model................ [CREATE VIEW in 1.01s]
-11:48:35 |
-11:48:35 | Finished running 1 table model, 1 view model in 4.81s.
+16:16:10 | Concurrency: 1 threads (target='dev')
+16:16:10 |
+16:16:10 | 1 of 1 START table model dbt_atamel_dataset.customers................ [RUN]
+16:16:15 | 1 of 1 OK created table model dbt_atamel_dataset.customers........... [CREATE TABLE (100) in 4.84s]
+16:16:15 |
+16:16:15 | Finished running 1 table model in 9.96s.
 
 Completed successfully
 
-Done. PASS=2 WARN=0 ERROR=0 SKIP=0 TOTAL=2
+Done. PASS=1 WARN=0 ERROR=0 SKIP=0 TOTAL=1
 ```
 
-You should see a temp dataset created in BigQuery.
+You should see a new dataset and a customers table created in BigQuery:
+
+![DBT customers table](./images/dbt-customers-table.png)
 
 ## Run dbt with Cloud Run
 
@@ -108,7 +101,7 @@ USER root
 WORKDIR /dbt
 COPY --from=builder /app/server ./
 COPY script.sh ./
-COPY dbt_project ./
+COPY jaffle-shop ./
 
 ENTRYPOINT "./server"
 ```
@@ -135,6 +128,13 @@ gcloud projects add-iam-policy-binding \
   --role=roles/bigquery.admin
 ```
 
+Enable the Cloud Build and Run APIs:
+
+```sh
+gcloud services enable run.googleapis.com
+gcloud services enable cloudbuild.googleapis.com
+```
+
 Build the container:
 
 ```sh
@@ -150,6 +150,7 @@ Deploy to Cloud Run with the service account created earlier and also
 gcloud run deploy ${SERVICE_NAME} \
     --image gcr.io/$(gcloud config get-value project)/${SERVICE_NAME} \
     --service-account ${SERVICE_ACCOUNT}@$(gcloud config get-value project).iam.gserviceaccount.com \
+    --platform managed \
     --no-allow-unauthenticated
 ```
 
@@ -158,7 +159,7 @@ gcloud run deploy ${SERVICE_NAME} \
 The final step is to call the Cloud Run service on a schedule. You can do this
 with Cloud Scheduler.
 
-First, enable the Cloud Scheduler API:
+Enable the Cloud Scheduler API:
 
 ```sh
 gcloud services enable cloudscheduler.googleapis.com
@@ -172,7 +173,8 @@ gcloud iam service-accounts create ${SERVICE_ACCOUNT} \
    --display-name "DBT Scheduler Service Account"
 gcloud run services add-iam-policy-binding ${SERVICE_NAME} \
    --member=serviceAccount:${SERVICE_ACCOUNT}@$(gcloud config get-value project).iam.gserviceaccount.com \
-   --role=roles/run.invoker
+   --role=roles/run.invoker \
+   --platform managed
 ```
 
 Create a Cloud Scheduler job to call the service every 5 minutes:
@@ -186,9 +188,13 @@ gcloud scheduler jobs create http ${SERVICE_NAME}-job --schedule "*/5 * * * *" \
    --oidc-token-audience=${SERVICE_URL}
 ```
 
-You can test that the service gets called and the temporary BigQuery dataset
-gets created by manually invoking the job:
+You can test that the service by manually invoking the job:
 
 ```sh
 gcloud scheduler jobs run ${SERVICE_NAME}-job
 ```
+
+After a few seconds, you should see the dataset created with a new
+customers table in BigQuery:
+
+![DBT customers table](./images/dbt-customers-table2.png)

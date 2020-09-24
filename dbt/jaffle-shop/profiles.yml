@@ -1,8 +1,8 @@
-default:
+jaffle_shop:
   target: dev
   outputs:
     dev:
       type: bigquery
       method: oauth
-      project: events-atamel
-      dataset: temp
+      project: dbt-atamel
+      dataset: dbt_atamel_dataset
