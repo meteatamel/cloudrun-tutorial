@@ -53,7 +53,7 @@ Cloud Run Eventing
 
 * [Image processing pipeline - Eventarc](docs/image-processing-pipeline-eventarc.md)
 * [Image processing pipeline - GKE](docs/image-processing-pipeline-gke.md)
-* [BigQuery processing pipeline](docs/bigquery-processing-pipeline.md)
+* [BigQuery processing pipeline - Eventarc](docs/bigquery-processing-pipeline-eventarc.md)
 * [BigQuery processing pipeline - GKE](docs/bigquery-processing-pipeline-gke.md)
 
 Other

@@ -252,8 +252,7 @@ account for Compute Engine which has the following email:
 Grant the `eventarc.admin` role to the service account:
 
 ```sh
-export PROJECT_NUMBER="$(gcloud projects list --filter=$(gcloud config get-value
-project) --format='value(PROJECT_NUMBER)')"
+export PROJECT_NUMBER="$(gcloud projects list --filter=$(gcloud config get-value project) --format='value(PROJECT_NUMBER)')"
 
 gcloud projects add-iam-policy-binding $(gcloud config get-value project) \
     --member=serviceAccount:${PROJECT_NUMBER}-compute@developer.gserviceaccount.com \
@@ -265,6 +264,7 @@ Create the trigger:
 ```sh
 gcloud beta eventarc triggers create trigger-${SERVICE_NAME} \
   --destination-run-service=${SERVICE_NAME} \
+  --destination-run-region=${REGION} \
   --matching-criteria="type=google.cloud.audit.log.v1.written" \
   --matching-criteria="serviceName=storage.googleapis.com" \
   --matching-criteria="methodName=storage.objects.create" \

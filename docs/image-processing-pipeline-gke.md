@@ -1,7 +1,7 @@
-# Image Processing Pipeline - GKE
+# Image Processing Pipeline - Events with Cloud run on Anthos (GKE)
 
 In this sample, we'll build an image processing pipeline to connect Google Cloud
-Storage events to various services with **Events with Cloud Run on GKE**.
+Storage events to various services with **Events with Cloud run on Anthos (GKE)**.
 
 ![Image Processing Pipeline](./images/image-processing-pipeline-gke.png)
 
