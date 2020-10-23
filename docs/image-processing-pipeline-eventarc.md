@@ -1,7 +1,7 @@
-# Image Processing Pipeline
+# Image Processing Pipeline - Eventarc
 
 In this sample, we'll build an image processing pipeline to connect Google Cloud
-Storage events to various services with **Events with Cloud Run (Managed)**.
+Storage events to various services with **Eventarc**.
 
 ![Image Processing Pipeline](./images/image-processing-pipeline.png)
 
@@ -106,6 +106,7 @@ Create a Pub/Sub trigger:
 ```sh
 gcloud beta eventarc triggers create trigger-${SERVICE_NAME} \
   --destination-run-service=${SERVICE_NAME} \
+  --destination-run-region=${REGION} \
   --matching-criteria="type=google.cloud.pubsub.topic.v1.messagePublished"
 ```
 
@@ -152,6 +153,7 @@ Create a Pub/Sub trigger:
 ```sh
 gcloud beta eventarc triggers create trigger-${SERVICE_NAME} \
   --destination-run-service=${SERVICE_NAME} \
+  --destination-run-region=${REGION} \
   --matching-criteria="type=google.cloud.pubsub.topic.v1.messagePublished"
 ```
 
@@ -197,6 +199,7 @@ Create a Pub/Sub trigger:
 ```sh
 gcloud beta eventarc triggers create trigger-${SERVICE_NAME} \
   --destination-run-service=${SERVICE_NAME} \
+  --destination-run-region=${REGION} \
   --matching-criteria="type=google.cloud.pubsub.topic.v1.messagePublished"
 ```
 
@@ -242,6 +245,21 @@ gcloud run deploy ${SERVICE_NAME} \
 The trigger of the service filters on Audit Logs for Cloud Storage events with
 `methodName` of `storage.objects.create`.
 
+Audit log triggers require a service account. Let's use the default service
+account for Compute Engine which has the following email:
+`PROJECT_NUMBER-compute@developer.gserviceaccount.com`.
+
+Grant the `eventarc.admin` role to the service account:
+
+```sh
+export PROJECT_NUMBER="$(gcloud projects list --filter=$(gcloud config get-value
+project) --format='value(PROJECT_NUMBER)')"
+
+gcloud projects add-iam-policy-binding $(gcloud config get-value project) \
+    --member=serviceAccount:${PROJECT_NUMBER}-compute@developer.gserviceaccount.com \
+    --role='roles/eventarc.admin'
+```
+
 Create the trigger:
 
 ```sh
@@ -249,7 +267,8 @@ gcloud beta eventarc triggers create trigger-${SERVICE_NAME} \
   --destination-run-service=${SERVICE_NAME} \
   --matching-criteria="type=google.cloud.audit.log.v1.written" \
   --matching-criteria="serviceName=storage.googleapis.com" \
-  --matching-criteria="methodName=storage.objects.create"
+  --matching-criteria="methodName=storage.objects.create" \
+  --service-account=${PROJECT_NUMBER}-compute@developer.gserviceaccount.com
 ```
 
 ## Test the pipeline
