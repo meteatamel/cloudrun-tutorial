@@ -273,20 +273,6 @@ gcloud run deploy ${SERVICE_NAME} \
 The trigger of the service filters on Audit Logs for Cloud Storage events with
 `methodName` of `storage.objects.create`.
 
-Audit log triggers require a service account. Let's use the default service
-account for Compute Engine which has the following email:
-`PROJECT_NUMBER-compute@developer.gserviceaccount.com`.
-
-Grant the `eventarc.admin` role to the service account:
-
-```sh
-export PROJECT_NUMBER="$(gcloud projects list --filter=$(gcloud config get-value project) --format='value(PROJECT_NUMBER)')"
-
-gcloud projects add-iam-policy-binding $(gcloud config get-value project) \
-    --member=serviceAccount:${PROJECT_NUMBER}-compute@developer.gserviceaccount.com \
-    --role='roles/eventarc.admin'
-```
-
 Create the trigger:
 
 ```sh
