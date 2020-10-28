@@ -21,7 +21,35 @@ Storage events to various services with **Eventarc**.
 6. Labeler receives the event from `fileuploaded2` topic, extracts labels of the
    image with Vision API and saves the labels to the output bucket.
 
-## Set variables
+## Before you begin
+
+Make sure `gcloud` is up to date and `beta` components are installed:
+
+```sh
+gcloud components update
+gcloud components install beta
+```
+
+[Enable Cloud Audit Logs](https://console.cloud.google.com/iam-admin/audit)
+Admin Read, Data Read, and Data Write Log Types for Cloud Storage.
+
+Grant the `eventarc.admin` role to the default compute service account:
+
+```sh
+export PROJECT_NUMBER="$(gcloud projects list --filter=$(gcloud config get-value project) --format='value(PROJECT_NUMBER)')"
+
+gcloud projects add-iam-policy-binding $(gcloud config get-value project) \
+    --member=serviceAccount:${PROJECT_NUMBER}-compute@developer.gserviceaccount.com \
+    --role='roles/eventarc.admin'
+```
+
+Grant the `iam.serviceAccountTokenCreator` role to the Pub/Sub service account:
+
+```sh
+gcloud projects add-iam-policy-binding $(gcloud config get-value project) \
+    --member="serviceAccount:service-${PROJECT_NUMBER}@gcp-sa-pubsub.iam.gserviceaccount.com" \
+    --role='roles/iam.serviceAccountTokenCreator'
+```
 
 Set region, location and platform:
 

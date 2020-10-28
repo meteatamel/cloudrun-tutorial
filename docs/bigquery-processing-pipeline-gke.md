@@ -18,7 +18,14 @@ the new charts via SendGrid with **Events with Cloud Run on Anthos (GKE)**.
    the bucket via a `CloudStorageSource` and sends an email notification to
    users using SendGrid.
 
-## Set variables
+## Before you begin
+
+Make sure `gcloud` is up to date and `beta` components are installed:
+
+```sh
+gcloud components update
+gcloud components install beta
+```
 
 Set cluster name, zone and platform:
 

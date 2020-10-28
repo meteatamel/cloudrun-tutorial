@@ -20,9 +20,16 @@ Storage events to various services with **Events with Cloud run on Anthos (GKE)*
 6. Labeler receives the `fileuploaded` event, extracts labels of the image with
    Vision API and saves the labels to the output bucket.
 
-## Set zone and platform
+## Before you begin
 
-Set some variables to hold your cluster name and zone. For example:
+Make sure `gcloud` is up to date and `beta` components are installed:
+
+```sh
+gcloud components update
+gcloud components install beta
+```
+
+Set cluster name, zone and platform:
 
 ```sh
 export CLUSTER_NAME=events-cluster

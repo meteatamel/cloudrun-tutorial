@@ -17,7 +17,35 @@ the new charts via SendGrid with **Eventarc**.
 4. `Notifier` receives the Cloud Storage event from the bucket via an `AuditLog`
    and sends an email notification to users using SendGrid.
 
-## Set variables
+## Before you begin
+
+Make sure `gcloud` is up to date and `beta` components are installed:
+
+```sh
+gcloud components update
+gcloud components install beta
+```
+
+[Enable Cloud Audit Logs](https://console.cloud.google.com/iam-admin/audit)
+Admin Read, Data Read, and Data Write Log Types for Cloud Storage.
+
+Grant the `eventarc.admin` role to the default compute service account:
+
+```sh
+export PROJECT_NUMBER="$(gcloud projects list --filter=$(gcloud config get-value project) --format='value(PROJECT_NUMBER)')"
+
+gcloud projects add-iam-policy-binding $(gcloud config get-value project) \
+    --member=serviceAccount:${PROJECT_NUMBER}-compute@developer.gserviceaccount.com \
+    --role='roles/eventarc.admin'
+```
+
+Grant the `iam.serviceAccountTokenCreator` role to the Pub/Sub service account:
+
+```sh
+gcloud projects add-iam-policy-binding $(gcloud config get-value project) \
+    --member="serviceAccount:service-${PROJECT_NUMBER}@gcp-sa-pubsub.iam.gserviceaccount.com" \
+    --role='roles/iam.serviceAccountTokenCreator'
+```
 
 Set region, location and platform:
 
@@ -98,20 +126,6 @@ gcloud run deploy ${SERVICE_NAME} \
 
 The trigger of the service filters on Audit Logs for Cloud Storage events with
 `methodName` of `storage.objects.create`.
-
-Audit log triggers require a service account. Let's use the default service
-account for Compute Engine which has the following email:
-`PROJECT_NUMBER-compute@developer.gserviceaccount.com`.
-
-Grant the `eventarc.admin` role to the service account:
-
-```sh
-export PROJECT_NUMBER="$(gcloud projects list --filter=$(gcloud config get-value project) --format='value(PROJECT_NUMBER)')"
-
-gcloud projects add-iam-policy-binding $(gcloud config get-value project) \
-    --member=serviceAccount:${PROJECT_NUMBER}-compute@developer.gserviceaccount.com \
-    --role='roles/eventarc.admin'
-```
 
 Create the trigger:
 
