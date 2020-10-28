@@ -1,4 +1,4 @@
-# BigQuery Processing Pipeline
+# BigQuery Processing Pipeline - Eventarc
 
 In this sample, we'll build an BigQuery processing pipeline to query some public
 dataset on a schedule, create charts out of the data and then notify users about
