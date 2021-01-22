@@ -19,11 +19,10 @@ the new charts via SendGrid with **Eventarc**.
 
 ## Before you begin
 
-Make sure `gcloud` is up to date and `beta` components are installed:
+Make sure `gcloud` is up to date:
 
 ```sh
 gcloud components update
-gcloud components install beta
 ```
 
 [Enable Cloud Audit Logs](https://console.cloud.google.com/iam-admin/audit)
@@ -130,12 +129,12 @@ The trigger of the service filters on Audit Logs for Cloud Storage events with
 Create the trigger:
 
 ```sh
-gcloud beta eventarc triggers create trigger-${SERVICE_NAME} \
+gcloud eventarc triggers create trigger-${SERVICE_NAME} \
   --destination-run-service=${SERVICE_NAME} \
   --destination-run-region=${REGION} \
-  --matching-criteria="type=google.cloud.audit.log.v1.written" \
-  --matching-criteria="serviceName=storage.googleapis.com" \
-  --matching-criteria="methodName=storage.objects.create" \
+  --event-filters="type=google.cloud.audit.log.v1.written" \
+  --event-filters="serviceName=storage.googleapis.com" \
+  --event-filters="methodName=storage.objects.create" \
   --service-account=${PROJECT_NUMBER}-compute@developer.gserviceaccount.com
 ```
 
@@ -175,16 +174,16 @@ gcloud run deploy ${SERVICE_NAME} \
 Create a Pub/Sub trigger:
 
 ```sh
-gcloud beta eventarc triggers create trigger-${SERVICE_NAME} \
+gcloud eventarc triggers create trigger-${SERVICE_NAME} \
   --destination-run-service=${SERVICE_NAME} \
   --destination-run-region=${REGION} \
-  --matching-criteria="type=google.cloud.pubsub.topic.v1.messagePublished"
+  --event-filters="type=google.cloud.pubsub.topic.v1.messagePublished"
 ```
 
 Set the Pub/Sub topic in an env variable that we'll need later:
 
 ```sh
-export TOPIC_QUERY_COMPLETED=$(basename $(gcloud beta eventarc triggers describe trigger-${SERVICE_NAME} --format='value(transport.pubsub.topic)'))
+export TOPIC_QUERY_COMPLETED=$(basename $(gcloud eventarc triggers describe trigger-${SERVICE_NAME} --format='value(transport.pubsub.topic)'))
 ```
 
 ## Query Runner
@@ -223,7 +222,7 @@ gcloud run deploy ${SERVICE_NAME} \
 Create a Pub/Sub trigger:
 
 ```sh
-gcloud beta eventarc triggers create trigger-${SERVICE_NAME} \
+gcloud eventarc triggers create trigger-${SERVICE_NAME} \
   --destination-run-service=${SERVICE_NAME} \
   --destination-run-region=${REGION} \
   --matching-criteria="type=google.cloud.pubsub.topic.v1.messagePublished"
@@ -232,7 +231,7 @@ gcloud beta eventarc triggers create trigger-${SERVICE_NAME} \
 Set the Pub/Sub topic in an env variable that we'll need later:
 
 ```sh
-export TOPIC_QUERY_SCHEDULED=$(gcloud beta eventarc triggers describe trigger-${SERVICE_NAME} --format='value(transport.pubsub.topic)')
+export TOPIC_QUERY_SCHEDULED=$(gcloud eventarc triggers describe trigger-${SERVICE_NAME} --format='value(transport.pubsub.topic)')
 ```
 
 ### Scheduler job
@@ -273,7 +272,7 @@ gcloud scheduler jobs create pubsub cre-scheduler-cy \
 Before testing the pipeline, make sure all the triggers are ready:
 
 ```sh
-gcloud beta eventarc triggers list
+gcloud eventarc triggers list
 
 NAME                   DESTINATION_RUN_SERVICE  DESTINATION_RUN_PATH
 trigger-chart-creator  chart-creator

@@ -9,8 +9,8 @@ Storage events to various services with **Eventarc**.
 2. Cloud Storage update event is read into Cloud Run via an `AuditLog`.
 3. Filter service receives the Cloud Storage event. It uses Vision API to
    determine if the image is safe. If so, it creates sends a Pub/Sub message to
-   `fileuploaded1` and `fileuploaded2` topics.
-4. Resizer service receives the event from `fileuploaded1` topic, resizes the
+   `fileuploaded` topic.
+4. Resizer service receives the event from `fileuploaded` topic, resizes the
    image using [ImageSharp](https://github.com/SixLabors/ImageSharp) library,
    saves to the resized image to the output bucket, sends a Pub/Sub message to
    `fileresized` topic.
@@ -18,16 +18,15 @@ Storage events to various services with **Eventarc**.
    watermark to the image using
    [ImageSharp](https://github.com/SixLabors/ImageSharp) library and saves the
    image to the output bucket.
-6. Labeler receives the event from `fileuploaded2` topic, extracts labels of the
+6. Labeler receives the event from `fileuploaded` topic, extracts labels of the
    image with Vision API and saves the labels to the output bucket.
 
 ## Before you begin
 
-Make sure `gcloud` is up to date and `beta` components are installed:
+Make sure `gcloud` is up to date:
 
 ```sh
 gcloud components update
-gcloud components install beta
 ```
 
 [Enable Cloud Audit Logs](https://console.cloud.google.com/iam-admin/audit)
@@ -132,16 +131,16 @@ gcloud run deploy ${SERVICE_NAME} \
 Create a Pub/Sub trigger:
 
 ```sh
-gcloud beta eventarc triggers create trigger-${SERVICE_NAME} \
+gcloud eventarc triggers create trigger-${SERVICE_NAME} \
   --destination-run-service=${SERVICE_NAME} \
   --destination-run-region=${REGION} \
-  --matching-criteria="type=google.cloud.pubsub.topic.v1.messagePublished"
+  --event-filters="type=google.cloud.pubsub.topic.v1.messagePublished"
 ```
 
 Set the Pub/Sub topic in an env variable that we'll need later:
 
 ```sh
-export TOPIC_FILE_RESIZED=$(basename $(gcloud beta eventarc triggers describe trigger-${SERVICE_NAME} --format='value(transport.pubsub.topic)'))
+export TOPIC_FILE_RESIZED=$(basename $(gcloud eventarc triggers describe trigger-${SERVICE_NAME} --format='value(transport.pubsub.topic)'))
 ```
 
 ## Resizer
@@ -174,21 +173,25 @@ gcloud run deploy ${SERVICE_NAME} \
   --allow-unauthenticated
 ```
 
-### Trigger
+### File uploaded Pub/Sub topic
 
-Create a Pub/Sub trigger:
+Create a Pub/Sub topic for resizer and labeler services to share in their triggers.
 
 ```sh
-gcloud beta eventarc triggers create trigger-${SERVICE_NAME} \
-  --destination-run-service=${SERVICE_NAME} \
-  --destination-run-region=${REGION} \
-  --matching-criteria="type=google.cloud.pubsub.topic.v1.messagePublished"
+export TOPIC_FILE_UPLOADED=file-uploaded
+gcloud pubsub topics create ${TOPIC_FILE_UPLOADED}
 ```
 
-Set the Pub/Sub topic in an env variable that we'll need later:
+### Trigger
+
+Create a Pub/Sub trigger with the `TOPIC_FILE_UPLOADED` as transport topic:
 
 ```sh
-export TOPIC_FILE_UPLOADED1=$(basename $(gcloud beta eventarc triggers describe trigger-${SERVICE_NAME} --format='value(transport.pubsub.topic)'))
+gcloud eventarc triggers create trigger-${SERVICE_NAME} \
+  --destination-run-service=${SERVICE_NAME} \
+  --destination-run-region=${REGION} \
+  --event-filters="type=google.cloud.pubsub.topic.v1.messagePublished" \
+  --transport-topic=projects/$(gcloud config get-value project)/topics/${TOPIC_FILE_UPLOADED}
 ```
 
 ## Labeler
@@ -222,19 +225,14 @@ gcloud run deploy ${SERVICE_NAME} \
 
 ### Trigger
 
-Create a Pub/Sub trigger:
+Create a Pub/Sub trigger with the `TOPIC_FILE_UPLOADED` as transport topic:
 
 ```sh
-gcloud beta eventarc triggers create trigger-${SERVICE_NAME} \
+gcloud eventarc triggers create trigger-${SERVICE_NAME} \
   --destination-run-service=${SERVICE_NAME} \
   --destination-run-region=${REGION} \
-  --matching-criteria="type=google.cloud.pubsub.topic.v1.messagePublished"
-```
-
-Set the Pub/Sub topic in an env variable that we'll need later:
-
-```sh
-export TOPIC_FILE_UPLOADED2=$(basename $(gcloud beta eventarc triggers describe trigger-${SERVICE_NAME} --format='value(transport.pubsub.topic)'))
+  --event-filters="type=google.cloud.pubsub.topic.v1.messagePublished" \
+  --transport-topic=projects/$(gcloud config get-value project)/topics/${TOPIC_FILE_UPLOADED}
 ```
 
 ## Filter
@@ -264,7 +262,7 @@ Deploy the service:
 ```sh
 gcloud run deploy ${SERVICE_NAME} \
   --image gcr.io/$(gcloud config get-value project)/${SERVICE_NAME}:v1 \
-  --update-env-vars BUCKET=${BUCKET1},TOPIC_ID=${TOPIC_FILE_UPLOADED1}:${TOPIC_FILE_UPLOADED2},PROJECT_ID=$(gcloud config get-value project) \
+  --update-env-vars BUCKET=${BUCKET1},TOPIC_ID=${TOPIC_FILE_UPLOADED},PROJECT_ID=$(gcloud config get-value project) \
   --allow-unauthenticated
 ```
 
@@ -276,12 +274,12 @@ The trigger of the service filters on Audit Logs for Cloud Storage events with
 Create the trigger:
 
 ```sh
-gcloud beta eventarc triggers create trigger-${SERVICE_NAME} \
+gcloud eventarc triggers create trigger-${SERVICE_NAME} \
   --destination-run-service=${SERVICE_NAME} \
   --destination-run-region=${REGION} \
-  --matching-criteria="type=google.cloud.audit.log.v1.written" \
-  --matching-criteria="serviceName=storage.googleapis.com" \
-  --matching-criteria="methodName=storage.objects.create" \
+  --event-filters="type=google.cloud.audit.log.v1.written" \
+  --event-filters="serviceName=storage.googleapis.com" \
+  --event-filters="methodName=storage.objects.create" \
   --service-account=${PROJECT_NUMBER}-compute@developer.gserviceaccount.com
 ```
 
@@ -290,7 +288,7 @@ gcloud beta eventarc triggers create trigger-${SERVICE_NAME} \
 Before testing the pipeline, make sure all the triggers are ready:
 
 ```sh
-gcloud beta eventarc triggers list
+gcloud eventarc triggers list
 
 NAME                 DESTINATION_RUN_SERVICE  DESTINATION_RUN_PATH
 trigger-filter       filter
