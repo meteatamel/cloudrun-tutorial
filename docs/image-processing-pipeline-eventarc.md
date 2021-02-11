@@ -32,14 +32,14 @@ gcloud components update
 [Enable Cloud Audit Logs](https://console.cloud.google.com/iam-admin/audit)
 Admin Read, Data Read, and Data Write Log Types for Cloud Storage.
 
-Grant the `eventarc.admin` role to the default compute service account:
+Grant the `eventarc.eventReceiver` role to the default compute service account:
 
 ```sh
 export PROJECT_NUMBER="$(gcloud projects list --filter=$(gcloud config get-value project) --format='value(PROJECT_NUMBER)')"
 
 gcloud projects add-iam-policy-binding $(gcloud config get-value project) \
     --member=serviceAccount:${PROJECT_NUMBER}-compute@developer.gserviceaccount.com \
-    --role='roles/eventarc.admin'
+    --role='roles/eventarc.eventReceiver'
 ```
 
 Grant the `iam.serviceAccountTokenCreator` role to the Pub/Sub service account:
