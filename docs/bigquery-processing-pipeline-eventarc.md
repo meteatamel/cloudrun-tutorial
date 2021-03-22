@@ -225,7 +225,7 @@ Create a Pub/Sub trigger:
 gcloud eventarc triggers create trigger-${SERVICE_NAME} \
   --destination-run-service=${SERVICE_NAME} \
   --destination-run-region=${REGION} \
-  --matching-criteria="type=google.cloud.pubsub.topic.v1.messagePublished"
+  --event-filters="type=google.cloud.pubsub.topic.v1.messagePublished"
 ```
 
 Set the Pub/Sub topic in an env variable that we'll need later:
