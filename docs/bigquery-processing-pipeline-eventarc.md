@@ -38,14 +38,6 @@ gcloud projects add-iam-policy-binding $(gcloud config get-value project) \
     --role='roles/eventarc.eventReceiver'
 ```
 
-Grant the `iam.serviceAccountTokenCreator` role to the Pub/Sub service account:
-
-```sh
-gcloud projects add-iam-policy-binding $(gcloud config get-value project) \
-    --member="serviceAccount:service-${PROJECT_NUMBER}@gcp-sa-pubsub.iam.gserviceaccount.com" \
-    --role='roles/iam.serviceAccountTokenCreator'
-```
-
 Set region, location and platform:
 
 ```sh
