@@ -51,10 +51,10 @@ Cloud Run Serving
 
 Cloud Run Eventing
 
-* [Image processing pipeline - Eventarc](docs/image-processing-pipeline-eventarc.md)
-* [Image processing pipeline - GKE](docs/image-processing-pipeline-gke.md)
-* [BigQuery processing pipeline - Eventarc](docs/bigquery-processing-pipeline-eventarc.md)
-* [BigQuery processing pipeline - GKE](docs/bigquery-processing-pipeline-gke.md)
+* [Image processing pipeline - Eventarc](https://github.com/GoogleCloudPlatform/eventarc-samples/blob/main/docs/image-processing-pipeline-eventarc.md)
+* [Image processing pipeline - GKE](https://github.com/GoogleCloudPlatform/eventarc-samples/blob/main/docs/image-processing-pipeline-gke.md)
+* [BigQuery processing pipeline - Eventarc](https://github.com/GoogleCloudPlatform/eventarc-samples/blob/main/docs/bigquery-processing-pipeline-eventarc.md)
+* [BigQuery processing pipeline - GKE](https://github.com/GoogleCloudPlatform/eventarc-samples/blob/main/docs/bigquery-processing-pipeline-gke.md)
 
 Other
 
