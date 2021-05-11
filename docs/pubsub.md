@@ -72,7 +72,7 @@ Create a Cloud Pub/Sub subscription with the service account:
 ```bash
 export SERVICE_URL="$(gcloud run services list --platform managed --filter=${SERVICE_NAME} --format='value(URL)')"
 
-gcloud beta pubsub subscriptions create ${TOPIC_NAME}-subscription --topic ${TOPIC_NAME} \
+gcloud pubsub subscriptions create ${TOPIC_NAME}-subscription --topic ${TOPIC_NAME} \
    --push-endpoint=${SERVICE_URL} \
    --push-auth-service-account=${SERVICE_ACCOUNT}@${PROJECT_ID}.iam.gserviceaccount.com
 ```
