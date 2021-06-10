@@ -17,7 +17,7 @@ For the sample dbt service, we will use
 [jaffle-shop](https://github.com/fishtown-analytics/jaffle_shop). `jaffle_shop`
 is a fictional ecommerce store with the following tables:
 
-![Jaffle Shop Tables](https://github.com/fishtown-analytics/jaffle_shop/raw/master/etc/jaffle_shop_erd.png)
+![Jaffle Shop Tables](https://raw.githubusercontent.com/fishtown-analytics/jaffle_shop/main/etc/jaffle_shop_erd.png)
 
 There is already a public project `dbt-tutorial` with a `jaffle_shop` dataset
 in BigQuery:
