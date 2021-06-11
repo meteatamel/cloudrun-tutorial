@@ -1,0 +1,23 @@
+{
+  "apiVersion": "run.googleapis.com/v1alpha1",
+  "kind": "Job",
+  "metadata": {
+    "annotations": {
+      "run.googleapis.com/launch-stage": "ALPHA"
+    },
+    "name": "JOB_NAME",
+    "namespace": "GOOGLE_CLOUD_PROJECT"
+  },
+  "spec": {
+    "completions": 1,
+    "template": {
+      "spec": {
+        "containers": [
+          {
+            "image": "gcr.io/GOOGLE_CLOUD_PROJECT/JOB_NAME"
+          }
+        ]
+      }
+    }
+  }
+}
