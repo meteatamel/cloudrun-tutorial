@@ -10,7 +10,9 @@ Cloud Run is built from open-source [Knative](https://knative.dev/), letting you
 
 There's a [presentation](https://speakerdeck.com/meteatamel/serverless-containers-with-cloud-run) that accompanies the tutorial.
 
-[![Serverless with Cloud Run](./docs/images/serverless-containers-with-cloud-run.png)](https://speakerdeck.com/meteatamel/serverless-containers-with-cloud-run)
+<a href="https://speakerdeck.com/meteatamel/serverless-containers-with-cloud-run">
+    <img alt="Serverless with Cloud Run" src="docs/images/serverless-containers-with-cloud-run.png" width="50%" height="50%">
+</a>
 
 ## Setup
 
