@@ -11,15 +11,14 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-using System.IO;
+using System;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 
-namespace event_display
+namespace helloworld
 {
     public class Startup
     {
@@ -27,27 +26,21 @@ namespace event_display
         {
         }
 
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILogger<Startup> logger)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
             }
 
-            logger.LogInformation("Event Display is starting...");
-
             app.UseRouting();
 
             app.UseEndpoints(endpoints =>
             {
-                endpoints.MapPost("/", async context =>
+                endpoints.MapGet("/", async context =>
                 {
-                    using (var reader = new StreamReader(context.Request.Body))
-                    {
-                        var content = await reader.ReadToEndAsync();
-                        logger.LogInformation("Event Display received event: " + content);
-                        await context.Response.WriteAsync(content);
-                    }
+                    var target = Environment.GetEnvironmentVariable("TARGET") ?? "World";
+                    await context.Response.WriteAsync($"Hello {target} from .NET Core 3.1!\n");
                 });
             });
         }

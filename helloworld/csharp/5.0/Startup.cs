@@ -1,4 +1,4 @@
-﻿// Copyright 2019 Google LLC
+﻿// Copyright 2021 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ namespace helloworld
                 endpoints.MapGet("/", async context =>
                 {
                     var target = Environment.GetEnvironmentVariable("TARGET") ?? "World";
-                    await context.Response.WriteAsync($"Hello {target}!\n");
+                    await context.Response.WriteAsync($"Hello {target} from .NET 5.0!\n");
                 });
             });
         }
