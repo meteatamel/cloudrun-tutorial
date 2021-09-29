@@ -6,16 +6,16 @@ Let's see how to configure a service. We can use the service from the [previous]
 
 The service in [helloworld](../helloworld) folder looks for an environment variable `TARGET` to print out but it's not set. Let's set that variable in Cloud Run:
 
-```bash
-gcloud run services update ${SERVICE_NAME} \
+```sh
+gcloud run services update $SERVICE_NAME \
   --platform managed \
   --update-env-vars TARGET=v1
 ```
 
 Now, the service reads the environment variable:
 
-```bash
-curl ${SERVICE_URL}
+```sh
+curl $SERVICE_URL
 
 Hello v1!
 ```
@@ -28,8 +28,8 @@ By default, 1 CPU is allocated for each container instance. This cannot be chang
 
 By default, the service gets 256Mi of memory. Let's set it to maximum 2Gi:
 
-```bash
-gcloud run services update ${SERVICE_NAME} \
+```sh
+gcloud run services update $SERVICE_NAME \
   --platform managed \
   --memory 2Gi
 ```
@@ -38,8 +38,8 @@ gcloud run services update ${SERVICE_NAME} \
 
 By default, each container gets 80 requests. Let's half that to 40:
 
-```bash
-gcloud run services update ${SERVICE_NAME} \
+```sh
+gcloud run services update $SERVICE_NAME \
   --platform managed \
   --concurrency 40
 ```
@@ -48,8 +48,8 @@ gcloud run services update ${SERVICE_NAME} \
 
 By default, the request timeout is 300 seconds. Let's set it to maximum 900 seconds:
 
-```bash
-gcloud run services update ${SERVICE_NAME} \
+```sh
+gcloud run services update $SERVICE_NAME \
   --platform managed \
   --timeout 900
 ```
@@ -58,8 +58,8 @@ gcloud run services update ${SERVICE_NAME} \
 
 By default, Cloud Run autoscales to 1000 containers. Let's set it to maximum 500:
 
-```bash
-gcloud run services update ${SERVICE_NAME} \
+```sh
+gcloud run services update $SERVICE_NAME \
   --platform managed \
   --max-instances 500
 ```

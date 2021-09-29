@@ -1,27 +1,30 @@
 # Service to service authentication
 
-In this example, we'll see how to setup service-to-service auth between two Cloud Run services. More specifically: 
-* We'll deploy a service that makes a call to another service and see that it fails to make the call. 
+In this example, we'll see how to setup service-to-service auth between two Cloud Run services. More specifically:
+
+* We'll deploy a service that makes a call to another service and see that it fails to make the call.
 * We'll setup service-to-service auth in the wrong way to make the call work. 
-* We'll give our service an identity and do the service-to-service authentication the right way. 
+* We'll give our service an identity and do the service-to-service authentication the right way.
 
 ## Deploy a receiving service
 
-First, let's build and deploy a *private* Cloud Run service that will receive calls. You can check out the code in [auth/receiving](../auth/receiving) but it is a service that simply echoes back with `Hello World`. 
+First, let's build and deploy a *private* Cloud Run service that will receive calls. You can check out the code in [auth/receiving](../auth/receiving) but it is a service that simply echoes back with `Hello World`.
 
 Deploy the service with `no-allow-unauthenticated` flag:
 
-```bash
-export SERVICE_NAME=receiving
+```sh
+PROJECT_ID=$(gcloud config get-value project)
+SERVICE_NAME=receiving
+REGION=us-central1
 
 gcloud builds submit \
-  --project ${PROJECT_ID} \
-  --tag gcr.io/${PROJECT_ID}/receiving
+  --tag gcr.io/$PROJECT_ID/receiving
 
-gcloud run deploy ${SERVICE_NAME} \
-  --image gcr.io/${PROJECT_ID}/receiving \
+gcloud run deploy $SERVICE_NAME \
+  --image gcr.io/$PROJECT_ID/receiving \
   --platform managed \
-  --no-allow-unauthenticated
+  --no-allow-unauthenticated \
+  --region $REGION 
 ```
 
 ## Deploy a calling service
@@ -30,31 +33,29 @@ Second, let's build and deploy a Cloud Run service that calls the receiving Clou
 
 Get the url of the receiving service and deploy the public service pointing to that url:
 
-```bash
-export RECEIVING_SERVICE_URL="$(gcloud run services describe receiving --format='value(status.url)' --platform=managed)"
-
-export SERVICE_NAME=calling
+```sh
+RECEIVING_SERVICE_URL=$(gcloud run services describe $SERVICE_NAME --region $REGION --format 'value(status.url)')
+SERVICE_NAME=calling
 
 gcloud builds submit \
-  --project ${PROJECT_ID} \
-  --tag gcr.io/${PROJECT_ID}/calling
+  --tag gcr.io/$PROJECT_ID/calling
 
-
-gcloud run deploy ${SERVICE_NAME} \
-  --image gcr.io/${PROJECT_ID}/calling \
+gcloud run deploy $SERVICE_NAME \
+  --image gcr.io/$PROJECT_ID/calling \
   --platform managed \
   --allow-unauthenticated \
-  --set-env-vars URL=${RECEIVING_SERVICE_URL}
+  --region $REGION \
+  --set-env-vars URL=$RECEIVING_SERVICE_URL
 ```
 
 ## Test the calling service
 
 Test the calling service:
 
-```bash
-export CALLING_SERVICE_URL="$(gcloud run services describe calling --format='value(status.url)' --platform=managed)"
+```sh
+CALLING_SERVICE_URL=$(gcloud run services describe $SERVICE_NAME --region $REGION --format 'value(status.url)')
 
-curl ${CALLING_SERVICE_URL}
+curl $CALLING_SERVICE_URL
 
 Second service says:
 <html><head>
@@ -68,7 +69,7 @@ Second service says:
 </body></html>
 ```
 
-As expected, the calling service gets a `Forbidden` error from the receiving service because it's not authenticated. 
+As expected, the calling service gets a `Forbidden` error from the receiving service because it's not authenticated.
 
 ## Service-to-service auth overview
 
@@ -83,42 +84,42 @@ We'll get back to #1 for now and focus on #2 in the next section.
 
 A Cloud Run service can use an identity token to identify itself to another Cloud Run service. But where do you get an identity token? You can use the Compute Metadata Server to fetch identity tokens with a specific audience (i.e. another Cloud Run service url) as follows:
 
-```
+```sh
 curl "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/identity?audience=[AUDIENCE]" \
   -H "Metadata-Flavor: Google"
 ```
 
-In the modified version of our calling service in [auth/authenticated](../auth/authenticated) folder, we get an id token in `GetIdToken` method and then pass that token as an authorization header. Check out [DefaultController.cs](../auth/authenticated/Controllers/DefaultController.cs) for details. 
+In the modified version of our calling service in [auth/authenticated](../auth/authenticated) folder, we get an id token in `GetIdToken` method and then pass that token as an authorization header. Check out [DefaultController.cs](../auth/authenticated/Controllers/DefaultController.cs) for details.
 
 Let's build and deploy the modified calling service. In [auth/authenticated](../auth/authenticated) folder, first get the service url of the private service and then deploy the modified calling service:
 
-```bash
-export SERVICE_NAME=authenticated
+```sh
+SERVICE_NAME=authenticated
 
 gcloud builds submit \
-  --project ${PROJECT_ID} \
-  --tag gcr.io/${PROJECT_ID}/authenticated
+  --tag gcr.io/$PROJECT_ID/authenticated
 
-gcloud run deploy ${SERVICE_NAME} \
-  --image gcr.io/${PROJECT_ID}/authenticated \
+gcloud run deploy $SERVICE_NAME \
+  --image gcr.io/$PROJECT_ID/authenticated \
   --platform managed \
   --allow-unauthenticated \
-  --set-env-vars URL=${RECEIVING_SERVICE_URL}
+  --region $REGION \
+  --set-env-vars URL=$RECEIVING_SERVICE_URL
 ```
 
 ## Test the calling service
 
 Test the modified calling service:
 
-```bash
-export AUTH_SERVICE_URL="$(gcloud run services describe authenticated --format='value(status.url)' --platform=managed)"
+```sh
+AUTH_SERVICE_URL=$(gcloud run services describe $SERVICE_NAME --region $REGION --format='value(status.url)')
 
-curl ${AUTH_SERVICE_URL}
+curl $AUTH_SERVICE_URL
 
 Second service says: Hello World!
 ```
 
-But why does it work? Even though we identified our calling service to the receiving service, we didn't configure the receiving service to accept requests from the calling service (we ignored #1). 
+But why does it work? Even though we identified our calling service to the receiving service, we didn't configure the receiving service to accept requests from the calling service (we ignored #1).
 
 As explained in [service identity docs](https://cloud.google.com/run/docs/securing/service-identity), by default, Cloud Run services use the Compute Engine default service account `(PROJECT_NUMBER-compute@developer.gserviceaccount.com)`, which has the Project > Editor IAM role. This means that by default, your Cloud Run revisions have read and write access to all resources in your GCP project. 
 
@@ -128,43 +129,43 @@ This is why it worked but it's not ideal.
 
 Let's now give the calling service an identity. First, create a Service Account:
 
-```bash
-export SERVICE_ACCOUNT=cloudrun-authenticated-sa
+```sh
+SERVICE_ACCOUNT=cloudrun-authenticated-sa
 
-gcloud iam service-accounts create ${SERVICE_ACCOUNT} \
+gcloud iam service-accounts create $SERVICE_ACCOUNT \
    --display-name "Cloud Run Authenticated Service Account"
 ```
 
 Deploy the calling service with the new identity:
 
-```bash
-export SERVICE_NAME=authenticated
+```sh
+SERVICE_NAME=authenticated
 
-gcloud run services update ${SERVICE_NAME} \
-  --service-account ${SERVICE_ACCOUNT}@${PROJECT_ID}.iam.gserviceaccount.com \
-  --platform managed
+gcloud run services update $SERVICE_NAME \
+  --service-account $SERVICE_ACCOUNT@$PROJECT_ID.iam.gserviceaccount.com \
+  --platform managed \
+  --region $REGION
 ```
 
 At this point, if you try the calling service, it'll get a `Forbidden` error from the receiving service because it's not associated with the default Compute Engine service account. 
-
 
 ## Configure the receiving service to accept requests from the calling service
 
 We need to configure the receiving service to accept requests from the calling service. This is done by giving the service account of the calling service the Cloud Run invoke role on the receiving service:  
 
-```bash
-export SERVICE_NAME=receiving
+```sh
+SERVICE_NAME=receiving
 
-gcloud run services add-iam-policy-binding ${SERVICE_NAME} \
-  --member=serviceAccount:${SERVICE_ACCOUNT}@${PROJECT_ID}.iam.gserviceaccount.com \
+gcloud run services add-iam-policy-binding $SERVICE_NAME \
+  --member=serviceAccount:$SERVICE_ACCOUNT@$PROJECT_ID.iam.gserviceaccount.com \
   --role=roles/run.invoker \
   --platform managed
 ```
 
 Finally, everything works as expected:
 
-```bash
-curl ${AUTH_SERVICE_URL}
+```sh
+curl $AUTH_SERVICE_URL
 
 Second service says: Hello World!
 ```

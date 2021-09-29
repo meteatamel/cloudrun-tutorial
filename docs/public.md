@@ -23,7 +23,6 @@ PROJECT_ID=$(gcloud config get-value project)
 SERVICE_NAME=helloworld
 
 gcloud builds submit \
-  --project $PROJECT_ID \
   --tag gcr.io/$PROJECT_ID/$SERVICE_NAME
 ```
 

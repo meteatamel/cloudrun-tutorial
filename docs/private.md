@@ -4,22 +4,26 @@ Let's deploy a container to non publicly accessible Cloud Run service. We can us
 
 ## Deploy to Cloud Run
 
-```bash
-export SERVICE_NAME=helloworld-private
+```sh
+PROJECT_ID=$(gcloud config get-value project)
+SERVICE_NAME=helloworld-private
+REGION=us-central1
 
-gcloud run deploy ${SERVICE_NAME} \
-  --image gcr.io/${PROJECT_ID}/helloworld \
+gcloud run deploy $SERVICE_NAME \
+  --image gcr.io/$PROJECT_ID/helloworld \
+  --no-allow-unauthenticated \
   --platform managed \
-  --no-allow-unauthenticated
+  --region $REGION 
 ```
+
 This creates a private Cloud Run service.
 
 ## Test the service
 
 If you test the service by visiting the url of the service, you get a 403 Forbidden error:
 
-```bash
-export SERVICE_URL="$(gcloud run services list --platform managed --filter=${SERVICE_NAME} --format='value(URL)')"
+```sh
+SERVICE_URL=$(gcloud run services describe $SERVICE_NAME --region $REGION --format 'value(status.url)')
 
 curl https://helloworld-private-paelpl5x6a-ew.a.run.app
 
@@ -42,7 +46,7 @@ For testing, you can go to the Cloud Run console and under the service url, you 
 
 Try again:
 
-```bash
+```sh
 curl -H \
 "Authorization: Bearer $(gcloud auth print-identity-token)" \
 ${SERVICE_URL}
