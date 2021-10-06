@@ -20,7 +20,7 @@ In folder where `Dockerfile` resides, build the container using Cloud Build and 
 
 ```sh
 PROJECT_ID=$(gcloud config get-value project)
-SERVICE_NAME=helloworld
+SERVICE_NAME=hello-http-container-dotnet50
 
 gcloud builds submit \
   --tag gcr.io/$PROJECT_ID/$SERVICE_NAME

@@ -11,7 +11,7 @@ Take a look at the service we already created in [helloworld/csharp/3.1](../hell
 Inside the source folder:
 
 ```sh
-SERVICE_NAME=helloworld
+SERVICE_NAME=hello-http-container-dotnet31
 REGION=us-central1
 
 gcloud run deploy $SERVICE_NAME \
