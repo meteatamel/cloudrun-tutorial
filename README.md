@@ -52,9 +52,10 @@ Cloud Run Serving
 * [Service to service authentication](docs/auth.md)
 
 Cloud Run Eventing
-
-* [Image processing pipeline - Eventarc + Cloud Run](https://github.com/GoogleCloudPlatform/eventarc-samples/tree/main/processing-pipelines/image)
-* [Image processing pipeline - Eventarc + Cloud Run for Anthos](https://github.com/GoogleCloudPlatform/eventarc-samples/blob/main/processing-pipelines/image/image-processing-pipeline-eventarc-crfa.md)
+* [Image processing pipeline v1 - Eventarc (AuditLog-Cloud Storage) + Cloud Run](https://github.com/GoogleCloudPlatform/eventarc-samples/tree/main/processing-pipelines/image-v1)
+* [Image processing pipeline v2 - Eventarc (Cloud Storage) + Cloud Run + Workflows](https://github.com/GoogleCloudPlatform/eventarc-samples/blob/main/processing-pipelines/image-v2)
+* [Image processing pipeline v3 - Eventarc (Cloud Storage) + Workflows](https://github.com/GoogleCloudPlatform/eventarc-samples/blob/main/processing-pipelines/image-v2)
+* [Image processing pipeline v1 - Eventarc (AuditLog-Cloud Storage) + Cloud Run for Anthos](https://github.com/GoogleCloudPlatform/eventarc-samples/blob/main/processing-pipelines/image-v1/image-processing-pipeline-eventarc-crfa.md)
 * [BigQuery processing pipeline - Eventarc + Cloud Run](https://github.com/GoogleCloudPlatform/eventarc-samples/tree/main/processing-pipelines/bigquery)
 * [BigQuery processing pipeline - Eventarc + Cloud Run for Anthos](https://github.com/GoogleCloudPlatform/eventarc-samples/blob/main/processing-pipelines/bigquery/bigquery-processing-pipeline-eventarc-crfa.md)
 
