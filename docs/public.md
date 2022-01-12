@@ -12,7 +12,7 @@ Let's go through the steps involved in actually creating and deploying the 'Hell
 
 ## 'Hello World' service
 
-Take a look at the service we already created in [helloworld/csharp/5.0](../helloworld/csharp/5.0) folder. It's a .NET 5.0 app with a `Dockerfile`.
+Take a look at the service we already created in [helloworld/csharp/6.0](../helloworld/csharp/6.0) folder. It's a .NET app with a `Dockerfile`.
 
 ## Build the container
 
@@ -53,5 +53,5 @@ SERVICE_URL=$(gcloud run services describe $SERVICE_NAME --region $REGION --form
 
 curl $SERVICE_URL
 
-Hello World from .NET 5.0!
+Hello World from .NET 6.0!
 ```
