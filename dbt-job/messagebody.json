@@ -6,7 +6,7 @@
       "run.googleapis.com/launch-stage": "ALPHA"
     },
     "name": "JOB_NAME",
-    "namespace": "GOOGLE_CLOUD_PROJECT"
+    "namespace": "PROJECT_ID"
   },
   "spec": {
     "completions": 1,
@@ -14,7 +14,7 @@
       "spec": {
         "containers": [
           {
-            "image": "gcr.io/GOOGLE_CLOUD_PROJECT/JOB_NAME"
+            "image": "gcr.io/PROJECT_ID/JOB_NAME"
           }
         ]
       }

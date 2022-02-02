@@ -62,6 +62,7 @@ Cloud Run Eventing
 Other
 
 * [Scheduled dbt service with BigQuery](docs/scheduled-dbt-service-bigquery.md)
+* [Scheduled dbt job with BigQuery](dbt-job)
 * [Deploying from source code](docs/deploy-from-source.md)
 
 -------

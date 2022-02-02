@@ -1,13 +1,14 @@
 # Scheduled Cloud Run dbt job with BigQuery
 
+> **Note:** Cloud Run jobs is a feature in *private preview*.
+> Only allow-listed projects can currently take advantage of it.
+
 [dbt](https://docs.getdbt.com/) is an open source project to build data
 transformation pipelines with supported databases such as BigQuery, Postgres,
 Redshift and more.
 
 In this sample, I want to show you how to setup a scheduled Cloud Run job
 that uses [dbt](https://docs.getdbt.com/) with BigQuery backend.
-
-**Note that Cloud Run jobs feature is currently in private preview**
 
 I'm assuming that you already have a Google Cloud project setup with BigQuery
 enabled, you have `gcloud` setup to use that project and you have `dbt`
@@ -46,7 +47,7 @@ Third, [customers.sql](jaffle-shop/models/customers.sql) defines the
 model for dbt. It reads from `dbt-tutorial` project's `jaffle_shop` dataset and
 creates a new transformed customers table.
 
-Run dbt with this new profile:
+Inside the `jaffle_shop` folder, run dbt with this new profile:
 
 ```sh
 $ dbt run --profiles-dir .
@@ -88,7 +89,7 @@ COPY jaffle-shop ./
 ENTRYPOINT "./script.sh"
 ```
 
-In this Dockerfile, we use the dbt base image, copy our dbt project and also the
+In this `Dockerfile`, we use the dbt base image, copy our dbt project and also the
 script to call that project with the profile.
 
 Enable the Cloud Build and Run APIs:
@@ -101,36 +102,41 @@ gcloud services enable cloudbuild.googleapis.com
 Build the container:
 
 ```sh
-export JOB_NAME=dbt-job
-gcloud builds submit \
-  --tag gcr.io/${GOOGLE_CLOUD_PROJECT}/${JOB_NAME}
+JOB_NAME=dbt-job
+PROJECT_ID=$(gcloud config get-value core/project)
+
+gcloud builds submit --tag gcr.io/$PROJECT_ID/$JOB_NAME
 ```
 
-To test, you can run the job manually:
+To test, first create the job:
 
 ```sh
-export REGION=europe-west1
+REGION=europe-west1
 gcloud config set run/region ${REGION}
+
 gcloud alpha run jobs create dbt-job \
-  --image=gcr.io/${GOOGLE_CLOUD_PROJECT}/${JOB_NAME}
+  --image=gcr.io/$PROJECT_ID/$JOB_NAME
 ```
 
-Check that you job completes:
+Run the job:
 
 ```sh
-gcloud alpha run jobs describe dbt-job
+gcloud alpha run jobs run dbt-job
 ```
 
-After a few seconds, you should see the dataset created with a new
+You can see the progress of the execution:
+
+```sh
+gcloud alpha run executions describe dbt-job-lfwc5
+
+✔ Execution dbt-job-lfwc5 in region europe-west1
+1 task completed successfully
+```
+
+And, you should see the dataset created with a new
 customers table in BigQuery:
 
 ![DBT customers table](../docs/images/dbt-customers-table2.png)
-
-You can now delete this job:
-
-```sh
-gcloud alpha run jobs delete dbt-job
-```
 
 ## Setup Cloud Scheduler
 
@@ -146,47 +152,29 @@ gcloud services enable cloudscheduler.googleapis.com
 Replace values in `messagebody.json` with values of your project:
 
 ```sh
-sed -i -e "s/GOOGLE_CLOUD_PROJECT/${GOOGLE_CLOUD_PROJECT}/" ./messagebody.json
-sed -i -e "s/JOB_NAME/${JOB_NAME}/" ./messagebody.json
+sed -i -e "s/PROJECT_ID/$PROJECT_ID/" ./messagebody.json
+sed -i -e "s/JOB_NAME/$JOB_NAME/" ./messagebody.json
 ```
 
 Create a Cloud Scheduler job to call the service every day at 9:00:
 
 ```sh
-export PROJECT_NUMBER="$(gcloud projects describe $(gcloud config get-value project) --format='value(projectNumber)')"
+PROJECT_NUMBER="$(gcloud projects describe $(gcloud config get-value project) --format='value(projectNumber)')"
 
-gcloud scheduler jobs create http ${JOB_NAME}-run --schedule "0 9 * * *" \
+gcloud scheduler jobs create http $JOB_NAME-run --schedule "0 9 * * *" \
    --http-method=POST \
-   --uri=https://${REGION}-run.googleapis.com/apis/run.googleapis.com/v1alpha1/namespaces/${GOOGLE_CLOUD_PROJECT}/jobs \
-   --oauth-service-account-email=${PROJECT_NUMBER}-compute@developer.gserviceaccount.com \
+   --uri=https://$REGION-run.googleapis.com/apis/run.googleapis.com/v1alpha1/namespaces/$PROJECT_ID/jobs \
+   --oauth-service-account-email=$PROJECT_NUMBER-compute@developer.gserviceaccount.com \
    --message-body-from-file=messagebody.json
 ```
 
 You can test that the service by manually invoking the job:
 
 ```sh
-gcloud scheduler jobs run ${JOB_NAME}-run
+gcloud scheduler jobs run $JOB_NAME-run
 ```
 
 After a few seconds, you should see the dataset created with a new
 customers table in BigQuery:
 
 ![DBT customers table](../docs/images/dbt-customers-table2.png)
-
-Since the job names have to be unique, they need to be cleaned up every time
-they run. Schedule another Cloud Scheduler job to delete the Cloud Run job every
-day at 10am:
-
-```sh
-gcloud scheduler jobs create http ${JOB_NAME}-delete --schedule "0 10 * * *" \
-   --http-method=DELETE \
-   --uri=https://${REGION}-run.googleapis.com/apis/run.googleapis.com/v1alpha1/namespaces/${GOOGLE_CLOUD_PROJECT}/jobs/${JOB_NAME} \
-   --oauth-service-account-email=${PROJECT_NUMBER}-compute@developer.gserviceaccount.com
-```
-
-Like before, you can invoke this manually to make sure the Cloud Run job is
-deleted now before the next run:
-
-```sh
-gcloud scheduler jobs run ${JOB_NAME}-delete
-```
