@@ -114,7 +114,7 @@ Default
 2022-05-24 17:01:35.259 BST/health: true
 ```
 
-The liveness probe waits for the `/started` endpoint to report
+The startup probe waits for the `/started` endpoint to report
 true before it concludes that the container is running.
 
 The liveness probe pings the `/health` endpoint every 10 seconds to see that the
