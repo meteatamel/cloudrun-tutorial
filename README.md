@@ -50,6 +50,7 @@ Cloud Run Serving
 * [Scheduled service](docs/scheduled.md)
 * [Task triggered service](docs/tasks.md)
 * [Service to service authentication](docs/auth.md)
+* [Cloud Run Healthchecks](health-checks)
 
 Cloud Run Eventing
 * [Image processing pipeline v1 - Eventarc (AuditLog-Cloud Storage) + Cloud Run](https://github.com/GoogleCloudPlatform/eventarc-samples/tree/main/processing-pipelines/image-v1)
