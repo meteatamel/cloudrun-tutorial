@@ -1,0 +1,47 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  annotations:
+    client.knative.dev/user-image: europe-west1-docker.pkg.dev/serverless-atamel/cloud-run-source-deploy/health-checks
+    run.googleapis.com/ingress: all
+    run.googleapis.com/ingress-status: all
+    run.googleapis.com/launch-stage: ALPHA
+  labels:
+    cloud.googleapis.com/location: europe-west1
+  name: health-checks
+  namespace: '422012409783'
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/maxScale: '100'
+        client.knative.dev/user-image: europe-west1-docker.pkg.dev/serverless-atamel/cloud-run-source-deploy/health-checks
+        run.googleapis.com/client-name: gcloud
+        run.googleapis.com/client-version: 386.0.0
+      name: health-checks-00003-wut
+    spec:
+      containerConcurrency: 80
+      containers:
+      - image: europe-west1-docker.pkg.dev/serverless-atamel/cloud-run-source-deploy/health-checks@sha256:2f6d69bb7366ccc43e7d2947a5b35803d5a314ff371d0a645cbdae6091cafc85
+        startupProbe:
+          httpGet:
+            path: /started
+          failureThreshold: 30
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /healthz
+          failureThreshold: 30
+          periodSeconds: 10
+        ports:
+        - containerPort: 8080
+          name: http1
+        resources:
+          limits:
+            cpu: 1000m
+            memory: 512Mi
+      serviceAccountName: 422012409783-compute@developer.gserviceaccount.com
+      timeoutSeconds: 300
+  traffic:
+  - latestRevision: true
+    percent: 100

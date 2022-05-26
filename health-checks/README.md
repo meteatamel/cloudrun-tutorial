@@ -109,9 +109,9 @@ Default
 2022-05-24 17:00:55.242 BST /started: false
 2022-05-24 17:01:05.245 BST /started: true
 2022-05-24 17:01:05.250 BST /health: true
-2022-05-24 17:01:15.252 BST/health: true
-2022-05-24 17:01:25.255 BST/health: true
-2022-05-24 17:01:35.259 BST/health: true
+2022-05-24 17:01:15.252 BST /health: true
+2022-05-24 17:01:25.255 BST /health: true
+2022-05-24 17:01:35.259 BST /health: true
 ```
 
 The startup probe waits for the `/started` endpoint to report
