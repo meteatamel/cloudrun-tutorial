@@ -4,21 +4,22 @@ Cloud Run now supports deploying directly from source with a single CLI command 
 
 ## 'Hello World' service
 
-Take a look at the service we already created in [helloworld/csharp/3.1](../helloworld/csharp/3.1) folder. It's a .NET Core 3.1 app and it doesn't have a `Dockerfile`.
+Take a look at the service we already created in
+[helloworld/csharp/7.0](../helloworld/csharp/7.0) folder. It's a .NET app and it
+doesn't have a `Dockerfile`.
 
 ## Deploy to Cloud Run
 
 Inside the source folder:
 
 ```sh
-SERVICE_NAME=hello-http-container-dotnet31
+SERVICE_NAME=helloworld-dotnet
 REGION=us-central1
 
 gcloud run deploy $SERVICE_NAME \
   --source . \
   --allow-unauthenticated \
-  --platform managed \
-  --region $REGION 
+  --region $REGION
 ```
 
 This uploads sources to Cloud Build, uses Buildpacks to build a container and then deploy to a Cloud Run service.
@@ -32,5 +33,5 @@ SERVICE_URL=$(gcloud run services describe $SERVICE_NAME --region $REGION --form
 
 curl $SERVICE_URL
 
-Hello World from .NET Core 3.1!
+Hello World from .NET 7.0!
 ```
